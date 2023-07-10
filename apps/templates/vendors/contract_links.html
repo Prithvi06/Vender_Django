@@ -1,0 +1,794 @@
+<div class="modal fade mymodal in " id="add-link-modal" tabindex="-1" role="dialog" aria-style="visibility: hidden;"="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">Create Link</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group bmd-form-group is-filled mt-4">
+          <label class="bmd-label-floating">Select Link Type</label>
+          <select id="add-link-type-select" class="form-control" onchange="linkType()">
+            <option value="">--------</option>
+            <option value="replaces">Replaces</option>
+            <option value="replaced_by">Replaced By</option>
+            {% if model.get_level != 3 %}
+            <option value="link">Child</option>
+            {% endif %}
+          </select>
+        </div>
+        <div class="form-group bmd-form-group is-filled linked_list mt-4" id="default_link">
+          <label class="bmd-label-floating">Select Contract To Link</label>
+          <select id="add-default-modal-select" class="form-control">
+            <option value="">--------</option>
+          </select>
+        </div>
+        <div class="form-group bmd-form-group is-filled linked_list mt-4" id="replaces" style="display: none;">
+          <label class="bmd-label-floating">Select Contract To Link</label>
+          <select id="add-replaces-modal-select" class="form-control" onchange="contractChange('replaces', 'add-replaces-modal-select')">
+            <option value="">--------</option>
+            {% for choice in repl_choices %}
+            <option value="{{choice.id}}" contract_name="{{ choice }}">{{ choice }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group bmd-form-group is-filled linked_list mt-4"  id="replaced_by" style="display: none;">
+          <label class="bmd-label-floating">Select Contract To Link</label>
+          <select id="add-replaced_by-modal-select" class="form-control" onchange="contractChange('replaced_by', 'add-replaced_by-modal-select')">
+            <option value="">--------</option>
+            {% for choice in contract_choices %}
+            <option value="{{choice.id}}" contract_name="{{ choice }}">{{ choice }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group bmd-form-group is-filled linked_list mt-4" id="linkes" style="display: none;">
+          <label class="bmd-label-floating">Select Contract To Link</label>
+          <select id="add-link-modal-select" class="form-control" onchange="contractChange('linkes', 'add-link-modal-select')">
+            <option value="">--------</option>
+            {% for choice in link_choices %}
+            <option value="{{choice.id}}" contract_name="{{ choice }}">{{ choice }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mt-4">
+          <h5 id="contract_h" style="display: none;"></h5>
+        </div>
+        <div id="relation_div" style="position: relative;">
+          <span >{{model}}</span>
+        </div>
+        <button type="button" id="add-link-modal-add-button" class="btn btn-primary pull-right"
+          onclick="handleSubmit()">Add</button>
+        <button type="button" class="btn btn-default pull-right mr-3" aria-style="visibility: hidden;"="true" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Links
+          <a style="text-decoration: none;" href="{% url 'contract-create' model.id %}" data-toggle="modal"
+            data-target="#add-link-modal">
+            <i class="material-icons">add_circle</i>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+
+        
+        {% if contract_parent and contract_parent.superseded_by or contract_parent.get_childs %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm" aria-describedby="Contract Links">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Effective Date</th>
+                <th scope="col">Next Expiration</th>
+                <th scope="col">Renewal Deadline</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody class="contract_relation">
+              <!-- first top most parent -->
+              <tr {% if model.id == contract_parent.id  %} class="contract_tr" {% endif %}>
+                <th scope="row" style="display: flex;">
+                  <div class="cross_circle"><i class="material-symbols-outlined cros_icon">{{ contract_parent.get_icon }}</i></div>
+                  <!-- draw line -->
+                  {% if contract_parent.get_draw_line %}
+                    <div {% if contract_parent.get_child_count == 1  and not contract_parent.get_seding_line %} class="vl last-vl" style="height: calc(100% - 7px); top: 24px;" {% elif contract_parent.get_seding_line and contract_parent.get_childs %} style=" height: 100%; top: 24px;" class="vl"{% else %} style=" height: calc(100% - 16px); top: 24px;" class="vl" {% endif %}></div>
+                  {% endif %}
+
+                  <!-- end draw line -->
+                  <a {% if model.id != contract_parent.id  %} href="{% url 'contract-edit' contract_parent.vendor.id contract_parent.id %}" {% endif %} class="contract-title">
+                    {{ contract_parent }}
+                  </a>
+                </th>
+                <td>{{ contract_parent.effective_date }}</td>
+                <td>{{ contract_parent.next_expiration }}</td>
+                <td>{{ contract_parent.renewal_reminder_date }}</td>
+                <td>
+                  {% if model.id != contract_parent.id  %}
+                  <a href="#">
+                    <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ contract_parent.id }}, {% if contract.parent_contract %}'child'{% else %} 'related' {% endif %})">delete</i>
+                  </a>
+                  {% else %}
+                    <a href="#" style="visibility: hidden;">
+                      <i class="material-symbols-outlined icon_alignment" >delete</i>
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+              <!-- end top most parent -->
+
+              <!-- if top most parent have child -->
+                {% for contract in contract_parent.get_childs %}
+                  <tr {% if model.id == contract.id  %} class="contract_tr" {% endif %}>
+                    <th scope="row" style="display: flex;margin-left: 20px !important;">
+                      <div class="cross_circle" style="">
+                        <i class="material-symbols-outlined cros_icon">
+                          {{ contract.get_icon }}
+                        </i>
+                      </div>
+                      {% if forloop.counter > 1 or not forloop.last  %}
+                        <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not contract_parent.get_seding_line %} style="height: 18px; bottom: 0%; top: -1px;" {% endif %} style="{% if contract_parent.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{contract.get_line_height}} + 8px);{% else %}height: {{contract.get_line_height}};{% endif %}" ></div>
+                        {% endif %}
+                        {% if contract.get_draw_line %}
+                          <div {% if contract.get_child_count == 1  and not contract.get_seding_line %} class="vl last-vl" style="height: calc({{contract.get_line_height}} - 6px); left: 34px;" {% else %} style="left: 34px; height: calc({{contract.get_line_height}} - 15px);" class="vl" {% endif %}></div>
+                        {% endif %}
+                          <!-- draw first verticle line -->
+                        {% if contract_parent.get_seding_line or forloop.counter < contract_parent.get_child_count %}
+                        <div class="vl" {% if contract.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                        {% endif %}
+                        <!-- end first vl -->
+                      <div class="hl" ></div>
+                      <a {% if model.id != contract.id  %} href="{% url 'contract-edit' contract.vendor.id contract.id %}" {% endif %} class="contract-title">
+                        {{ contract }}
+                      </a>
+                    </th>
+                    <td>{{ contract.effective_date }}</td>
+                    <td>{{ contract.next_expiration }}</td>
+                    <td>{{ contract.renewal_reminder_date }}</td>
+                    <td>
+                      {% if model.id != contract.id  %}
+                      <a href="#">
+                        <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ contract.id }}, 'child')">delete</i>
+                      </a>
+                      {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <!-- contract childs -->
+                  {% for sec_child in contract.get_childs %}
+                    <tr {% if model.id == sec_child.id  %} class="contract_tr" {% endif %}>
+                      <th scope="row" style="display: flex;margin-left: 40px !important;">
+                        <div class="cross_circle" style="">
+                          <i class="material-symbols-outlined cros_icon">
+                            {{ sec_child.get_icon }}
+                          </i>
+                        </div>
+                        {% if forloop.counter > 1 or not forloop.last  %}
+                        <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not contract.get_seding_line %} style="left: 34px; height: 18px; bottom: 0%; top: -1px;" {% endif %} style="left: 34px; {% if contract.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{sec_child.get_line_height}} + 8px);{% else %}height: {{sec_child.get_line_height}};{% endif %}" ></div>
+                        {% endif %}
+                        {% if sec_child.get_draw_line %}
+                          <div {% if sec_child.get_child_count == 1  and not sec_child.get_seding_line %} class="vl last-vl" style="height: calc(100% - 6px); left: 54px;" {% else %} style="left: 54px; height: calc(100% - 15px)" class="vl" {% endif %}></div>
+                        {% endif %}
+                        <!-- draw first verticle line -->
+                        {% if contract_parent.get_seding_line or forloop.parentloop.counter < contract_parent.get_child_count %}
+                        <div class="vl" {% if sec_child.get_draw_line or contract.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                        {% endif %}
+                        <!-- end first vl -->
+                        <!-- draw second vl -->
+                        {% if contract.get_seding_line or forloop.counter < contract.get_child_count or not forloop.last %}
+                        <div class="vl" {% if sec_child.get_draw_line %} style="height: 100%; left: 34px;" {% else %} style="height: calc(100% - 15px); left: 34px;" {% endif %}></div>
+                        {% endif %}
+                        <!-- end second vl -->
+                        <div class="hl" style="left: 34px;"></div>
+                        <a {% if model.id != sec_child.id  %} href="{% url 'contract-edit' sec_child.vendor.id sec_child.id %}" {% endif %} class="contract-title">
+                          {{ sec_child }}
+                        </a>
+                      </th>
+                      <td>{{ sec_child.effective_date }}</td>
+                      <td>{{ sec_child.next_expiration }}</td>
+                      <td>{{ sec_child.renewal_reminder_date }}</td>
+                      <td>
+                        {% if model.id != sec_child.id  %}
+                        <a href="#">
+                          <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ sec_child.id }}, 'child')">delete</i>
+                        </a>
+                        {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <!-- last row seded -->
+                      {% for sec_child_seded in sec_child.get_superseded_by %}
+                        <tr {% if model.id == sec_child_seded.id  %} class="contract_tr" {% endif %}>
+                          <th scope="row" style="display: flex; margin-left: 40px !important;">
+                            <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ sec_child_seded.get_icon }}</i></div>
+                            <!-- draw line -->
+                            {% if sec_child_seded.get_draw_line %}
+                              <div {% if sec_child_seded.get_child_count == 1  and not sec_child_seded.get_seding_line %} class="vl last-vl" style="left: 54px; height: calc(100% - 6px);" {% else %} style="left: 54px; height: calc(100% - 15px)" class="vl" {% endif %}></div>
+                            {% endif %}
+                            <!-- end draw line -->
+                            <!-- first vl -->
+                            {% if contract_parent.get_seding_line or forloop.parentloop.parentloop.counter < contract_parent.get_child_count %}
+                            <div class="vl" {% if sec_child_seded.get_draw_line or contract.get_seding_line or not forloop.parentloop.last %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                            {% endif %}
+                            <!-- end first vl -->
+                            {% if contract.get_seding_line or forloop.parentloop.counter < contract.get_child_count or not forloop.parentloop.last %}
+                            <div class="vl" {% if sec_child_seded.get_draw_line %} style="height: 100%; left: 34px;" {% else %} style="height: calc(100% - 15px); left: 34px;" {% endif %}></div>
+                            {% endif %}
+                            <a {% if model.id != sec_child_seded.id  %} href="{% url 'contract-edit' sec_child_seded.vendor.id sec_child_seded.id %}" {% endif %} class="contract-title">
+                              {{ sec_child_seded }}
+                            </a>
+                          </th>
+                          <td>{{ sec_child_seded.effective_date }}</td>
+                          <td>{{ sec_child_seded.next_expiration }}</td>
+                          <td>{{ sec_child_seded.renewal_reminder_date }}</td>
+                          <td>
+                            {% if model.id != sec_child_seded.id  %}
+                            <a href="#">
+                              <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ sec_child_seded.id }}, 'related')">delete</i>
+                            </a>
+                            {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    <!-- end last row seded -->
+
+                    {% endfor %}
+                  <!-- end childs -->
+                  <!-- if child have supersed by -->
+                    {% for child_seded in contract.get_superseded_by %}
+                      <tr {% if model.id == child_seded.id  %} class="contract_tr" {% endif %}>
+                        <th scope="row" style="display: flex; margin-left: 20px !important;">
+                          <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_seded.get_icon }}</i></div>
+                          <!-- draw line -->
+                          {% if child_seded.get_draw_line or forloop.parentforloop.counter < contract.get_child_count %}
+                            <div {% if child_seded.get_child_count == 1  and not child_seded.get_seding_line %} class="vl last-vl" style="left: 34px; height: calc({{child_seded.get_line_height}} - 6px);" {% else %} style="left: 34px; height: calc({{child_seded.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- end draw line -->
+                          <!-- first vl -->
+                          {% if contract_parent.get_seding_line or forloop.parentloop.counter < contract_parent.get_child_count %}
+                          <div class="vl" {% if child_seded.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                          {% endif %}
+                          <!-- end vl -->
+                          <a {% if model.id != child_seded.id  %} href="{% url 'contract-edit' child_seded.vendor.id child_seded.id %}" {% endif %} class="contract-title">
+                            {{ child_seded }}
+                          </a>
+                        </th>
+                        <td>{{ child_seded.effective_date }}</td>
+                        <td>{{ child_seded.next_expiration }}</td>
+                        <td>{{ child_seded.renewal_reminder_date }}</td>
+                        <td>
+                          {% if model.id != child_seded.id  %}
+                          <a href="#">
+                            <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_seded.id }}, 'related')">delete</i>
+                          </a>
+                          {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      <!-- if child have supereded by child -->
+                      {% for child in child_seded.get_childs %}
+                        <tr {% if model.id == child.id  %} class="contract_tr" {% endif %}>
+                          <th scope="row" style="display: flex;margin-left: 40px !important;">
+                            <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child.get_icon }}</i></div>
+                              {% if forloop.counter > 1 or not forloop.last  %}
+                              <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child_seded.get_seding_line %} style="left: 34px; height: 18px; bottom: 0%; top: -1px;"style="bottom: 51%;" {% endif %} style="left: 34px; {% if child_seded.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child.get_line_height}} + 8px);{% else %}height: {{child.get_line_height}}{% endif %}" ></div>
+                              {% endif %}
+                              {% if child.get_draw_line %}
+                                <div {% if child.get_child_count == 1  and not child.get_seding_line %} class="vl last-vl" style="height: calc(100% - 6px); left: 54px;" {% else %} style="left: 54px; height: calc(100% - 15px)" class="vl" {% endif %}></div>
+                              {% endif %}
+                              <!-- first vl -->
+                              {% if contract_parent.get_seding_line or forloop.parentloop.parentloop.counter < contract_parent.get_child_count %}
+                              <div class="vl" {% if child.get_draw_line or child_seded.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                              {% endif %}
+                              <!-- end first vl -->
+                              {% if child_seded.get_seding_line or forloop.counter < contract.get_child_count %}
+                              <div class="vl" {% if child_seded.get_draw_line and not forloop.last %} style="height: 100%; left: 34px;" {% else %} style="height: calc(100% - 15px); left: 34px;" {% endif %}></div>
+                              {% endif %}
+                              <div class="hl" style="left: 34px;"></div>
+                            <a {% if model.id != child.id  %} href="{% url 'contract-edit' child.vendor.id child.id %}" {% endif %} class="contract-title">
+                              {{ child }}
+                            </a>
+                          </th>
+                          <td>{{ child.effective_date }}</td>
+                          <td>{{ child.next_expiration }}</td>
+                          <td>{{ child.renewal_reminder_date }}</td>
+                          <td>
+                            {% if model.id != child.id  %}
+                            <a href="#">
+                              <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child.id }}, 'child')">delete</i>
+                            </a>
+                            {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                            {% endif %}
+                          </td>
+                        </tr>
+                        <!-- if child seded child have seded -->
+                        {% for child_seded_ in child.get_superseded_by %}
+                          <tr {% if model.id == child_seded_.id  %} class="contract_tr" {% endif %}>
+                            <th scope="row" style="display: flex; margin-left: 40px !important;">
+                              <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_seded_.get_icon }}</i></div>
+                              <!-- draw line -->
+                              {% if child_seded_.get_draw_line %}
+                                <div {% if child_seded_.get_child_count == 1  and not child_seded_.get_seding_line %} class="vl last-vl" style="left: 54px; height: calc({{child_seded_.get_line_height}} - 6px);" {% else %} style="left: 54px; height: calc({{child_seded_.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                              {% endif %}
+                              <!-- end draw line -->
+                              {% if child_seded.get_seding_line or forloop.parentloop.counter < contract.get_child_count %}
+                                <div style="left: 34px;" class="vl {% if child_seded_.get_draw_line %} last_vl_height {% else %} vl_height {% endif %}"></div>
+                                {% endif %}
+                                <!-- first vl -->
+                                {% if contract_parent.get_seding_line or forloop.parentloop.parentloop.parentloop.counter < contract_parent.get_child_count %}
+                                <div class="vl" {% if child_seded_.get_draw_line or child_seded.get_seding_line  %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                                {% endif %}
+                                <!-- end first vl -->
+                              <a {% if model.id != child_seded_.id  %} href="{% url 'contract-edit' child_seded_.vendor.id child_seded_.id %}" {% endif %} class="contract-title">
+                                {{ child_seded_ }}
+                              </a>
+                            </th>
+                            <td>{{ child_seded_.effective_date }}</td>
+                            <td>{{ child_seded_.next_expiration }}</td>
+                            <td>{{ child_seded_.renewal_reminder_date }}</td>
+                            <td>
+                              {% if model.id != child_seded_.id  %}
+                              <a href="#">
+                                <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_seded_.id }}, 'related')">delete</i>
+                              </a>
+                              {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endfor %}
+                        <!-- end seded -->
+                      {% endfor %}
+                      <!-- end child seded by child -->
+                    {% endfor %}
+                  <!-- end child supereded by -->
+                {% endfor %}
+              <!-- end top most child -->
+
+              <!-- top most supereded by -->
+              {% for contract in contract_parent.get_superseded_by %}
+                <tr {% if model.id == contract.id  %} class="contract_tr" {% endif %}>
+                  <th scope="row" style="display: flex;">
+                    <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ contract.get_icon }}</i></div>
+                    <!-- draw line -->
+                    {% if contract.get_draw_line %}
+                      <div {% if contract.get_child_count == 1  and not contract.get_seding_line %} class="vl last-vl" style="height: calc(100% - 6px);" {% elif contract.get_seding_line and contract.get_childs %} style=" height: 100%;" class="vl"{% else %} style=" height: calc(100% - 15px)" class="vl" {% endif %}></div>
+                    {% endif %}
+                    <!-- end draw line -->
+                    <a {% if model.id != contract.id  %} href="{% url 'contract-edit' contract.vendor.id contract.id %}" {% endif %} class="contract-title">
+                      {{ contract }}
+                    </a>
+                  </th>
+                  <td>{{ contract.effective_date }}</td>
+                  <td>{{ contract.next_expiration }}</td>
+                  <td>{{ contract.renewal_reminder_date }}</td>
+                  <td>
+                    {% if model.id != contract.id  %}
+                    <a href="#">
+                      <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ contract.id }}, 'related')">delete</i>
+                    </a>
+                    {% else %}
+                      <a href="#" style="visibility: hidden;">
+                        <i class="material-symbols-outlined icon_alignment" >delete</i>
+                      </a>
+                    {% endif %}
+                  </td>
+                </tr>
+                <!-- top seded childs -->
+                  {% for child in contract.get_childs %}
+                    <tr {% if model.id == child.id  %} class="contract_tr" {% endif %}>
+                      <th scope="row" style="display: flex;margin-left: 20px !important;">
+                        <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child.get_icon }}</i></div>
+                          {% if forloop.counter > 1 or not forloop.last  %}
+                          <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not contract.get_seding_line %} style="height: 18px; bottom: 0%; top: -1px;" {% endif %} style="{% if contract.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child.get_line_height}} + 8px);{% else %}height: {{child.get_line_height}}{% endif %}" ></div>
+                          {% endif %}
+                          {% if child.get_draw_line %}
+                            <div {% if child.get_child_count == 1  and not child.get_seding_line %} class="vl last-vl" style="height: calc({{child.get_line_height}} - 6px); left: 34px;" {% else %} style="left: 34px; height: calc({{child.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- draw first verticle line -->
+                          {% if contract.get_seding_line or forloop.counter < contract.get_child_count %}
+                          <div class="vl" {% if child.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                          {% endif %}
+                          <!-- end first vl -->
+                          <div class="hl" ></div>
+                        <a {% if model.id != child.id  %} href="{% url 'contract-edit' child.vendor.id child.id %}" {% endif %} class="contract-title">
+                          {{ child }}
+                        </a>
+                      </th>
+                      <td>{{ child.effective_date }}</td>
+                      <td>{{ child.next_expiration }}</td>
+                      <td>{{ child.renewal_reminder_date }}</td>
+                      <td>
+                        {% if model.id != child.id  %}
+                        <a href="#">
+                          <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child.id }}, 'child')">delete</i>
+                        </a>
+                        {% else %}
+                          <a href="#" style="visibility: hidden;">
+                            <i class="material-symbols-outlined icon_alignment" >delete</i>
+                          </a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <!-- top seded childs of child -->
+                      {% for child_of_child in child.get_childs %}
+                        <tr {% if model.id == child_of_child.id  %} class="contract_tr" {% endif %}>
+                          <th scope="row" style="display: flex;margin-left: 40px !important;">
+                            <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_of_child.get_icon }}</i></div>
+                              {% if forloop.counter > 1 or not forloop.last  %}
+                              <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child.get_seding_line %} style="left: 34px; height: 18px; bottom: 0%; top: -1px;" {% endif %} style="left: 34px; {% if child.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child_of_child.get_line_height}} + 8px);{% else %}height: {{child_of_child.get_line_height}}{% endif %}" ></div>
+                              {% endif %}
+                              
+                              <!-- draw first verticle line -->
+                              {% if contract.get_seding_line or forloop.parentloop.counter < contract.get_child_count %}
+                              <div class="vl" {% if child_of_child.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                              {% endif %}
+                              <!-- end first vl -->
+                              <!-- draw second vl -->
+                              {% if child.get_seding_line or not forloop.last %}
+                              <div class="vl" {% if child_of_child.get_draw_line %} style="left: 34px; height: 100%;" {% else %} style="left: 34px; height: calc(100% - 15px);" {% endif %}></div>
+                              {% endif %}
+                              <!-- end cecond vl -->
+                              {% if child_of_child.get_draw_line %}
+                                <div {% if child_of_child.get_child_count == 1  and not child_of_child.get_seding_line %} class="vl last-vl" style="height: calc({{child_of_child.get_line_height}} - 6px); left: 54px;" {% else %} style="left: 54px; height: calc({{child_of_child.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                              {% endif %}
+                              <div class="hl" style="left: 34px"></div>
+                            <a {% if model.id != child_of_child.id  %} href="{% url 'contract-edit' child_of_child.vendor.id child_of_child.id %}" {% endif %} class="contract-title">
+                              {{ child_of_child }}
+                            </a>
+                          </th>
+                          <td>{{ child_of_child.effective_date }}</td>
+                          <td>{{ child_of_child.next_expiration }}</td>
+                          <td>{{ child_of_child.renewal_reminder_date }}</td>
+                          <td>
+                            {% if model.id != child_of_child.id  %}
+                            <a href="#">
+                              <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_of_child.id }}, 'child')">delete</i>
+                            </a>
+                            {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                            {% endif %}
+                          </td>
+                        </tr>
+                        <!-- top seded childs of child -->
+                          {% for child_of_child_sed in child_of_child.get_superseded_by %}
+                            <tr {% if model.id == child_of_child_sed.id  %} class="contract_tr" {% endif %}>
+                              <th scope="row" style="display: flex;margin-left: 40px !important;">
+                                <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_of_child_sed.get_icon }}</i></div>
+                                {% if child_of_child_sed.get_draw_line %}
+                                  <div {% if child_of_child_sed.get_child_count == 1  and not child_of_child_sed.get_seding_line %} class="vl last-vl" style="height: calc(100% - 6px); left: 54px;" {% else %} style="left: 54px; height: calc(100% - 15px)" class="vl" {% endif %}></div>
+                                {% endif %}
+                                <!-- first vl -->
+                                {% if contract.get_seding_line or forloop.parentloop.parentloop.counter < contract.get_child_count %}
+                                <div class="vl" {% if child_of_child_sed.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                                {% endif %}
+                                <!-- end first vl -->
+                                {% if child.get_seding_line or not forloop.parentloop.last %}
+                                <div class="vl" {% if child_of_child_sed.get_draw_line %} style="height: 100%; left: 34px;" {% else %} style="height: calc(100% - 15px); left: 34px;" {% endif %}></div>
+                                {% endif %}
+
+                                <a {% if model.id != child_of_child_sed.id  %} href="{% url 'contract-edit' child_of_child_sed.vendor.id child_of_child_sed.id %}" {% endif %} class="contract-title">
+                                  {{ child_of_child_sed }}
+                                </a>
+                              </th>
+                              <td>{{ child_of_child_sed.effective_date }}</td>
+                              <td>{{ child_of_child_sed.next_expiration }}</td>
+                              <td>{{ child_of_child_sed.renewal_reminder_date }}</td>
+                              <td>
+                                {% if model.id != child_of_child_sed.id  %}
+                                <a href="#">
+                                  <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_of_child_sed.id }}, 'related')">delete</i>
+                                </a>
+                                {% else %}
+                                <a href="#" style="visibility: hidden;">
+                                  <i class="material-symbols-outlined icon_alignment" >delete</i>
+                                </a>
+                                {% endif %}
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        <!-- end top seded childs of child -->
+                      {% endfor %}
+                    <!-- end top seded childs of child -->
+                    <!-- top seded childs of sed -->
+                      {% for child_sed in child.get_superseded_by %}
+                        <tr {% if model.id == child_sed.id  %} class="contract_tr" {% endif %}>
+                          <th scope="row" style="display: flex;margin-left: 20px !important;">
+                            <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_sed.get_icon }}</i></div>
+                              {% if child_sed.get_draw_line %}
+                                <div {% if child_sed.get_child_count == 1  and not child_sed.get_seding_line %} class="vl last-vl" style="height: calc({{child_sed.get_line_height}} - 6px); left: 34px;" {% else %} style="left: 34px; height: calc({{child_sed.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                              {% endif %}
+                              <!-- first vl -->
+                              {% if contract.get_seding_line or forloop.parentloop.counter < contract.get_child_count %}
+                              <div class="vl" {% if child_sed.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                              {% endif %}
+                              <!-- end vl -->
+
+                            <a {% if model.id != child_sed.id  %} href="{% url 'contract-edit' child_sed.vendor.id child_sed.id %}" {% endif %} class="contract-title">
+                              {{ child_sed }}
+                            </a>
+                          </th>
+                          <td>{{ child_sed.effective_date }}</td>
+                          <td>{{ child_sed.next_expiration }}</td>
+                          <td>{{ child_sed.renewal_reminder_date }}</td>
+                          <td>
+                            {% if model.id != child_sed.id  %}
+                            <a href="#">
+                              <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_sed.id }}, 'child')">delete</i>
+                            </a>
+                            {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                            {% endif %}
+                          </td>
+                        </tr>
+                        {% for sec_level_child in child_sed.get_childs %}
+                          <tr {% if model.id == sec_level_child.id  %} class="contract_tr" {% endif %}>
+                            <th scope="row" style="display: flex;margin-left: 40px !important;">
+                              <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ sec_level_child.get_icon }}</i></div>
+
+                              {% if forloop.counter > 1 or not forloop.last  %}
+                              <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child_sed.get_seding_line %} style="left: 34px; height: 18px; bottom: 0%; top: -1px;" {% endif %} style="left: 34px; {% if child_sed.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{sec_level_child.get_line_height}} + 8px);{% else %}height: {{sec_level_child.get_line_height}}{% endif %}" ></div>
+                                {% endif %}
+                                {% if sec_level_child.get_draw_line %}
+                                  <div {% if sec_level_child.get_child_count == 1  and not sec_level_child.get_seding_line %} class="vl last-vl" style="height: calc({{sec_level_child.get_line_height}} - 6px); left: 54px;" {% else %} style="left: 54px; height: calc({{sec_level_child.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                                {% endif %}
+                                <!-- first vl -->
+                                {% if contract.get_seding_line or forloop.parentloop.parentloop.counter < contract.get_child_count %}
+                                <div class="vl" {% if sec_level_child.get_draw_line or child_sed.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                                {% endif %}
+                                <!-- end first vl -->
+                                {% if child_sed.get_seding_line %}
+                                <div class="vl" {% if sec_level_child.get_draw_line %} style="height: 100%; left: 34px;" {% else %} style="left: 34px; height: calc(100% - 15px);" {% endif %}></div>
+                                {% endif %}
+
+                                <div class="hl" style="left: 34px"></div>
+                              <a {% if model.id != sec_level_child.id  %} href="{% url 'contract-edit' sec_level_child.vendor.id sec_level_child.id %}" {% endif %} class="contract-title">
+                                {{ sec_level_child }}
+                              </a>
+                            </th>
+                            <td>{{ sec_level_child.effective_date }}</td>
+                            <td>{{ sec_level_child.next_expiration }}</td>
+                            <td>{{ sec_level_child.renewal_reminder_date }}</td>
+                            <td>
+                              {% if model.id != sec_level_child.id  %}
+                              <a href="#">
+                                <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ sec_level_child.id }}, 'child')">delete</i>
+                              </a>
+                              {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                              {% endif %}
+                            </td>
+                          </tr>
+                          {% for child_sed_third in sec_level_child.get_superseded_by %}
+                          <tr {% if model.id == child_sed_third.id  %} class="contract_tr" {% endif %}>
+                            <th scope="row" style="display: flex;margin-left: 40px !important;">
+                              <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{ child_sed_third.get_icon }}</i></div>
+                                {% if child_sed_third.get_draw_line %}
+                                  <div {% if child_sed_third.get_child_count == 1  and not child_sed_third.get_seding_line %} class="vl last-vl" style="height: calc({{child_sed_third.get_line_height}} - 6px); left: 54px;" {% else %} style="left: 54px; height: calc({{child_sed_third.get_line_height}} - 15px)" class="vl" {% endif %}></div>
+                                {% endif %}
+                                {% if child_sed.get_seding_line %}
+                                <div style="left: 34px;" class="vl {% if child_sed_third.get_draw_line %} last_vl_height {% else %} vl_height {% endif %}"></div>
+                                {% endif %}
+                                <!-- first vl -->
+                                {% if contract.get_seding_line or forloop.parentloop.parentloop.parentloop.counter < contract.get_child_count %}
+                                <div class="vl" {% if child_sed_third.get_draw_line or child_sed.get_seding_line  %} style="height: 100%;" {% else %} style="height: calc(100% - 15px);" {% endif %}></div>
+                                {% endif %}
+                                <!-- end first vl -->
+
+                              <a {% if model.id != child_sed_third.id  %} href="{% url 'contract-edit' child_sed_third.vendor.id child_sed_third.id %}" {% endif %} class="contract-title">
+                                {{ child_sed_third }}
+                              </a>
+                            </th>
+                            <td>{{ child_sed_third.effective_date }}</td>
+                            <td>{{ child_sed_third.next_expiration }}</td>
+                            <td>{{ child_sed_third.renewal_reminder_date }}</td>
+                            <td>
+                              {% if model.id != child_sed_third.id  %}
+                              <a href="#">
+                                <i class="material-symbols-outlined icon_alignment" onclick="removeLink({{ child_sed_third.id }}, 'child')">delete</i>
+                              </a>
+                              {% else %}
+                              <a href="#" style="visibility: hidden;">
+                                <i class="material-symbols-outlined icon_alignment" >delete</i>
+                              </a>
+                              {% endif %}
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        {% endfor %}
+                      {% endfor %}
+                    <!-- end top seded childs of sed -->
+                  {% endfor %}
+                <!-- end top seded child -->
+              {% endfor %}
+              <!-- endtop seeded -->
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no links.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<style type="text/css">
+  .vl_height{
+    height: calc(100% - 15px) !important;
+  }
+  .last_vl_height{
+    height: 100% !important;
+  }
+  .cross_circle{
+    width: 19px;
+    height: 19px;
+    /*margin-top: 2px;*/
+  }
+  .cros_icon{
+    padding-top: 1px;
+    font-size: 20px;
+    height: 19px;
+    width: 19px;
+    color: gray !important;
+  }
+  .vl {
+    left: 14px;
+    /*bottom: 50%;*/
+    height: 100%;
+    top: 23px;
+  }
+  .hl{
+    border-left: 14px solid #baafaf;
+    left: 14px;
+    top: 16px;
+  }
+  .child-vl{
+    left: 14px;
+    bottom: 0%;
+    /*top: calc(-100% + 45px);*/
+  }
+  .last-child-vl{
+    height: 100%;
+  }
+  .last-vl{
+    /*height: 150%;*/
+    height: calc(100% - 6px);
+  }
+  .pop-vl{
+    border-left: 1px solid #baafaf;
+    height: 22%;
+    left: 9px;
+    top: 18px;
+    position: absolute;
+    z-index: 1;
+  }
+  .pop-hl{
+    border-left: 23px solid #baafaf;
+    position: absolute;
+    left: 9px;
+    z-index: 3;
+    top: 35px;
+    height: 1px;
+    vertical-align: middle;
+  }
+</style>
+<script type="text/javascript">
+  var model = "{{model}}"
+  var icon_check = "{{cros_icon}}"
+  var child_icon = "check_circle"
+  if(icon_check == "True"){
+    child_icon = "highlight_off"
+  }
+  function linkType(){
+    $(".linked_list").hide()
+    $("#contract_h").hide()
+    var link_type = $("#add-link-type-select").val()
+    var flag = 0
+    if(link_type == "link"){
+      $("#linkes").show()
+      if ($("#add-link-modal-select").val()){
+          contractChange("linkes", "add-link-modal-select")
+       }else{
+        $("#relation_div").html(`<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">${child_icon}</i></div><span>${model}</span></div>`)
+       }
+    }else if(link_type == "replaced_by"){
+      $("#replaced_by").show()
+       if ($("#add-replaced_by-modal-select").val()){
+          contractChange("replaced_by", "add-replaced_by-modal-select")
+       }else{
+        $("#relation_div").html(`<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">highlight_off</i></div><span>${model}</span></div>`)
+       }
+    }else if(link_type == "replaces"){
+      $("#replaces").show()
+      if ($("#add-replaces-modal-select").val()){
+          contractChange("replaces", "add-replaces-modal-select")
+       }else{
+        $("#relation_div").html(`<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">check_circle</i></div><span>${model}</span></div>`)
+       }
+    }else{
+      $("#default_link").show()
+      $("#relation_div").html(`<span>${model}</span>`)
+    }
+    
+  }
+  function contractChange(arg, sel_id){
+    var option = ""
+    var select_id = "#"+arg
+    if($("#"+sel_id).val()){
+      var link_type_text = ""
+      var icon_model_html = ""
+      option = $('option:selected', select_id).attr('contract_name');
+      if(arg == "linkes"){
+        link_type_text = `${option} is a child of ${model}.`
+        icon_model_html = `<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">${child_icon}</i></div><span>${model}</span></div>
+          <div class='pop-vl' style='top: 18px; height: 39%;'></div><div class='pop-hl'></div>
+          <div style='display:flex; padding-left: 30px;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">arrow_circle_right</i></div><span>${option}</span></div>`
+        flag = 1
+      }else if(arg == "replaced_by"){
+        link_type_text = `${model} is replaced by ${option}.`
+        flag = 1
+        icon_model_html = `<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">highlight_off</i></div><span>${model}</span></div>
+          <div class='pop-vl'></div>
+          <div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-icons cros_icon">check_circle</i></div><span>${option}</span></div>`
+      }else if(arg == "replaces"){
+        link_type_text = `${model} replaces ${option}.`
+        icon_model_html = `<div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">highlight_off</i></div><span>${option}</span></div>
+          <div class='pop-vl'></div>
+          <div style='display:flex;'><div class="cross_circle mr-2" style=""><i class="material-symbols-outlined cros_icon">check_circle</i></div><span>${model}</span></div>`
+        flag = 1
+      }
+      if(flag == 1){
+        $("#contract_h").text(link_type_text)
+        $("#relation_div").html(icon_model_html)
+        $("#contract_h").show()
+        $("#link_type_contract").text(" " + option)
+      }else{
+        $("#contract_h").text(link_type_text)
+        $("#relation_div").html(icon_model_html)
+      }
+    }else{
+      $("#contract_h").hide()
+      $("#relation_div").html(`<span>${model}</span>`)
+    }
+  }
+
+  function handleSubmit(){
+    var link_type = $("#add-link-type-select").val()
+    if(link_type == "link"){
+      addLink($('#add-link-modal-select').val(), "link")
+    }else if(link_type == "replaced_by"){
+      addLink($('#add-replaced_by-modal-select').val(), "replaced_by")
+    }else if(link_type == "replaces"){
+      addLink($('#add-replaces-modal-select').val(), "replaces")
+    }
+  }
+</script>

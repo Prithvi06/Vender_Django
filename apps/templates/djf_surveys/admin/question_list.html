@@ -1,0 +1,306 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+{% load djf_survey_tags %}
+
+
+{% block title %} Questionaires {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+  .dropzone {
+    display: flex;
+    height: 100px;
+    border: 2px dashed #ccc;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+  }
+
+  .dropzone div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropzone.dragover {
+    border-color: #F26622;
+    color: white;
+    border-width: 5px;
+    background-color: #f2672258;
+    font-weight: bold;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization_pk %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:admin_survey' %}">Questionaires</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}">{{survey}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Preview
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Questionnaire
+        </h4>
+      </div>
+      {% if question %}
+      <div class="card-body">
+        {% if activequestion %}
+        <div class="row">
+          <div class="col-md-6 col-12">
+            <form method="post" action="{% url 'send-questionnaire' survey.pk %}" id="send_to_form">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-sm-6 col-12">
+                  <div class="form-group bmd-form-group is-filled">
+                    <label class="bmd-label-floating">Send To</label>
+                    <select class="form-control" id="send_to" name="send_to">
+                      <option value="">--------</option>
+                                            {% for vendor in vendors %}
+                        <option value="{{vendor.id}}">{{vendor.name}} - ({{vendor.owner.email}})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-12">
+                  <div class="form-group bmd-form-group is-filled">
+                    <label class="auto-label">Due Date</label>
+                    <input type="date" name="due_date" id="due_date" class="form-control" style="margin-top: 13px;">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="col-md-6 col-12 notes_btn_height">
+            <button class="btn btn-primary pull-right" onclick="saveAndSend()">Save and Send</button>
+            <button class="btn btn-dark pull-right mr-2" onclick="saveDontSend()" style="background-color: gray;">Save - Don't Send</button>
+            <a class="btn btn-dark pull-right mr-2" href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}" style="background-color: gray;">Cancel</a>
+          </div>
+        </div>
+      {% else %}
+      <div class="row">
+        <div class="col-12 notes_btn_height">
+            <button class="btn btn-primary pull-right mr-2" onclick="saveDontSend()">Save</button>
+            <a class="btn btn-dark pull-right mr-2" href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}" style="background-color: gray;">Cancel
+          </a>
+        </div>
+      </div>
+      {% endif %}
+        <div style="clear: both !important;"></div>
+        <form method="post" id="answer_form" enctype="multipart/form-data">
+           <button class="btn btn-primary pull-right mr-2" style="display:none;" id="answer_form_btn">Save</button>
+          <div class="d-flex">
+            <div id="sortable" class="question_top_div">
+              
+              {% csrf_token %}
+                {% for field in form %}
+                {% if not field.field.widget.attrs.question_type == 'na_explain' %}
+                <div class="main_header_div">
+                      {% if field.field.widget.attrs.header %}
+                      <div id="header_main_{{field|get_id_field}}" style="display: flex;">
+                        <div class="form-group bmd-form-group header_form" draggable="false" id="header_{{field|get_id_field}}">
+                          <input type="text" class="text-dark header_input" name="header" id="header-input-{{field|get_id_field}}" onclick="Editvalue('{{field|get_id_field}}')" value="{{field.field.widget.attrs.header|default_if_none:''|title}}" readonly=True style="background: none; z-index: 1; position: relative; border: none;">
+                        </div>
+                      </div>
+                      {% else %}
+                      <div id="header_main_{{field|get_id_field}}" style="display: flex;">
+                        <div class="form-group bmd-form-group header_form" draggable="false" id="header_{{field|get_id_field}}">
+                        </div>
+                      </div>
+                      {% endif %}
+                </div>
+                <div class="question_tile">
+                  <div class="dice_div">
+                    <h6 class="text-center question_number tooltip-parent tooltip-parent2 question_number_tip" style="display: block !important;"><span>{{field.field.widget.attrs.question_count}}</span><span class="tooltiptext">{{field.field.widget.attrs.question_id}} - [{{field.field.widget.attrs.question_key}}]</span></h6>
+                    <div class="sixth-face dice" style="cursor: pointer;">
+                      <i class="material-icons drag_indicators">drag_indicator</i>
+                    </div>
+                  </div>
+                  <div class="question_tile_div">
+                  <h5>{{field.label}}</h5>
+                  <div class="mt-1">
+                      {% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'checkbox' %}
+                      <div class="form-group" style="padding-bottom:0px;">
+                          {{ field }}
+                          {% if field.field.widget.attrs.question_type == 'Yes-No-NA' %}
+                            <div class="form-group bmd-form-group is-filled mt-4 pb-1">
+                                <div style="display: flex; justify-content: space-between;">
+                                  <label class="auto-label" style="font-size:14px!important">If N/A, explain</label>
+                                  <span class="help-block"><span class="label_count">{{field.field.widget.attrs.na_explain_value|length}}</span> / 500</span>
+                                </div>
+                              <textarea name="na_explain_{{field.field.widget.attrs.question_id}}" class="text-div" onkeyup="charCount(this)" style="height: 60px;  width: 100%;">{{field.field.widget.attrs.na_explain_value}}</textarea>
+                            </div>
+                          {% endif %}
+                      </div>
+                      {% elif field.field.widget.input_type == 'hidden' %}
+                      <div class="rating">
+                        <label style="margin-bottom:0px">
+                          <input type="radio" name="{{field.name}}" value="1" {% if field.value == "1" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                          <span class="icon">★</span>
+                        </label>
+                        <label style="margin-bottom:0px">
+                          <input type="radio" name="{{field.name}}" value="2" {% if field.value == "2" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                        </label>
+                        <label style="margin-bottom:0px">
+                          <input type="radio" name="{{field.name}}" value="3" {% if field.value == "3" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                        </label>
+                        <label style="margin-bottom:0px">
+                          <input type="radio" name="{{field.name}}" value="4" {% if field.value == "4" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                        </label>
+                        <label style="margin-bottom:0px">
+                          <input type="radio" name="{{field.name}}" value="5" {% if field.value == "5" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                          <span class="icon">★</span>
+                        </label>
+                      </div>
+                      {% elif field.field.widget.attrs.indicator == 'date' %}
+                      <div class="form-group bmd-form-group">
+                        <input type="date" name="{{field.name}}" class="form-control" id="{{field.auto_id}}" {% if field.field.required %}required{% endif %} value="{{field.value}}">
+                      </div>
+                      {% elif field.field.widget.input_type == 'file' %}
+                      <div style="height:230px">
+                        <input type="file" id="id_path{{field.name}}" name="{{field.name}}" value="{{field.value}}" {% if not field.initial.name %} {% if field.field.required %}required{% endif %} {% endif %} style="padding: 2px 0px 0px 0px;height: 0px;" onchange="selectDocument('{{field.name}}')">
+                        <div class="dropzone question_dropzone" id="dropzone{{field.name}}" ondrop="drop(event, '{{field.name}}')" ondragover="dragOverElement(event, '{{field.name}}')" ondragleave="dragLeaveElement(event, '{{field.name}}')">
+                          <div>
+                            <div>Drag & Drop File Here</div>
+                            <div id="id_current_file{{field.name}}">{% if field.value %}Current File: <a href="{% url 'djf_surveys:admin_question_document_view' field.field.widget.attrs.question_id %}" target="_blank">{{ field|document_value }}</a>{% endif %}</div>
+                          </div>
+                        </div>
+                        <button type="button" class="btn btn-primary pull-left" onclick="ChangeFile('{{field.name}}')">
+                          Browse To Upload File
+                        </button>
+                      </div>
+                      {% else %}
+                      <div class="form-group">
+                        {% if field.field.widget.input_type == 'text' %}
+                          {{ field|addclass:'form-control' }}
+                          <span class="help-block" style="float:right;"><span class="label_count">{{field.value|length}}</span> / 500</span>
+                        {% else %}
+                          {{ field|addclass:'form-control' }}
+                        {% endif %}
+                      </div>
+                      {% endif %}
+                  </div>
+                  <div class="help_text" style="height:40px">{{field.help_text}}</div>
+                </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </form>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Questionnaires.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+
+  function removeRequired(id, required=false) {
+      let hascheck = 0
+      let count = 0
+      let el = document.getElementsByClassName(id);
+      for (var i = 0; i < el.length; i++) {
+        if (el[i].hasAttribute("checked")){
+          hascheck = hascheck + 1
+        }
+        if (el[i].checked){
+          count = count + 1
+        }
+          el[i].removeAttribute("required")
+        }
+      if (required && (count == 0 || hascheck == 1)){
+        for (var i = 0; i < el.length; i++) {
+          el[i].required = true
+          if (el[i].hasAttribute("checked")){
+            el[i].removeAttribute("checked")
+          }
+        }
+      }
+    }
+
+  function charCount(e){
+    label_len = e.value.length
+    if (label_len >= 500) {
+      e.value = e.value.substring(0, 500)
+    }
+    e.parentElement.getElementsByClassName("label_count")[0].innerText = e.value.length
+  }
+
+  function saveAndSend(){
+    $('#send_to_form').submit()
+    // $("#answer_form").submit()
+    $("#answer_form_btn").click()
+  }
+  function saveDontSend(){
+    // $("#answer_form").submit()
+    $("#answer_form_btn").click()
+  }
+
+  $('#send_to_form').submit(function() {
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            console.log("success")
+        }
+    });
+    return false;
+});
+</script>
+<script>  
+  function drop(e, value){
+    var fileinput = document.getElementById('id_path'+value);
+    var filename = $("#id_current_file"+value);
+    fileinput.files = e.dataTransfer.files;
+    filename.text("Current File: " + e.dataTransfer.files[0].name);
+    e.preventDefault();
+    document.getElementById("dropzone"+value).className = 'dropzone';
+  }
+  function dragOverElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone dragover';
+    event.preventDefault()
+  }
+  function dragLeaveElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone';
+    event.preventDefault()
+  }
+  function ChangeFile(name){
+    document.getElementById("id_path"+name).click();
+  }
+  function selectDocument(name) {
+    var filename = $("#id_current_file"+name);
+    filename.text("Current File: " + $("#id_path"+name)[0].files[0].name);
+  };
+</script>
+{% endblock javascripts %}

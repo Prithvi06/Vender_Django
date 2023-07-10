@@ -1,0 +1,86 @@
+{% extends "layouts/vendor_base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Questionnaires {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-10">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Questionnaires
+          <a style="text-decoration: none;" href="#">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if surveys %}
+      <div class="card-body">
+        <form spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="q" type="text" class="form-control col-sm-3" placeholder="Search..."
+              value="{{ request.GET.q }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Sent</th>
+                <th scope="col">Due</th>
+                <th scope="col" class="hide_in_mobile_view">Sent By</th>
+                <th scope="col" class="hide_in_mobile_view">Status</th>
+                <th scope="col" class="hide_in_mobile_view">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for survey in surveys %}
+              <tr>
+                <td scope="row">
+                    <a {% if survey.answer %} href="{% url 'djf_surveys:vendor_edit_survey' survey.answer.id %}" {% else %} href="{% url 'djf_surveys:vendor_create_survey' survey.slug %}" {% endif %}>{{ survey.name }}</a>
+                </td>
+                <td>
+                  {{ survey.created_at }}
+                </td>
+                <td>
+                  {% if survey.due_date %}
+                  {{ survey.due_date }}
+                  {% endif %}
+                </td>
+                <td>
+                  {{ survey.vendor.org }}
+                </td>
+                <td>
+                  {% if survey.active %} Active {% else %}Not Active {% endif %}
+                </td>
+                <td>
+                  {{ survey.vendor.owner.first_name }} {{ survey.vendor.owner.last_name }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Questionnaires.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

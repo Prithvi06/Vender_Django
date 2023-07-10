@@ -1,0 +1,320 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Third Party Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  
+  .search_li{
+    width: 100%;
+  }
+  .vendor_list{
+    display: none;
+  }
+
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'systems' %}">System</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New System
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<!-- vendor form -->
+<form method="post" spellcheck="false" autocomplete="off" id="system-form">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit System</h4>
+          <p class="card-category">Update the System</p>
+        </div>
+        <div class="card-body">
+
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+              <div class="form-group bmd-form-group">
+                {{ form.name }}
+                <label class="bmd-label-floating">{{ form.name.label }}</label>
+                {{ form.errors.name }}
+              </div>
+               <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.system_type.label }}</label>
+                {{ form.system_type }}
+              </div>
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.asset_id.label }}</label>
+                {{ form.asset_id }}
+              </div>
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.account_id.label }}</label>
+                {{ form.account_id }}
+              </div>
+
+            </div>
+            <div class="col-md-6 col-12">
+
+              <div class="form-group bmd-form-group is-filled"  style="margin-top:20px">
+                <label class="auto-label bmd-label-static" style="margin-top:20px">{{ form.vendor.label }}</label>
+                {{ form.vendor }}
+                <select multiple class="form-control" name="linked_resource_" id="linked_resource_select">
+                      {% for data in resource_option_vendor %}
+                      <option value="{{data}}" data_type="THIRD_PARTY">{{data}}</option>
+                      {% endfor %}
+                      {% for data in resource_option_vendor_process %}
+                      <option value="{{data}}" data_type="PROCESS">{{data}}</option>
+                      {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group bmd-form-group is-filled">
+                {{ form.inservice_date }}
+                <label class="auto-label bmd-label-static">{{ form.inservice_date.label }}</label>
+              </div>
+
+              <div class="form-group bmd-form-group is-filled">
+                {{ form.retired_date }}
+                <label class="auto-label bmd-label-static">{{ form.retired_date.label }}</label>
+              </div>
+               <div class="form-group bmd-form-group is-filled">
+                <label class="auto-label bmd-label-static">{{ form.hosting.label }}</label>
+                
+                <select name="hosting" class="form-control" id="hosting">
+                    <option value="" {% if not form.hosting.value %} selected {% endif %}>---------</option>
+                    <option value="1" {% if form.hosting.value == 1 %} selected {% endif %}>SAAS</option>
+                    <option value="2" {% if form.hosting.value == 2 %} selected {% endif %}>Vendor Hosted</option>
+                    <option value="3" {% if form.hosting.value == 3 %} selected {% endif %}>{{organization.name |title}} Cloud</option>
+                    <option value="4" {% if form.hosting.value == 4 %} selected {% endif %}>{{organization.name |title}} Data Center</option>
+                    <option value="5" {% if form.hosting.value == 5 %} selected {% endif %}> {{organization.name |title}} On Prem</option>
+                </select>
+                {{ form.errors.name }}
+              </div>
+
+            </div>
+          </div>          
+
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} System
+          </button>
+          {% if model.id %}
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'systems' %}">
+             Cancel
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+<!-- end vendor form -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+
+<script type="text/javascript">
+   $(document).ready(function() {
+
+    var select = $('select[multiple]');
+    var options = select.find('option');
+
+    var div = $('<div />').addClass('selectMultiple');
+    var active = $('<div style="min-height:65px"/>');
+
+    var list = $('<ul id="search_ul" />').addClass("owner_list vendor_list");
+    var search_li = ($("<input type='text' onkeyup='searchMultiple()' placeholder='Search....' id='search_input' />")).addClass('search_li');
+    list.append(search_li)
+    options.each(function() {
+        var text = $(this).text();
+        if($(this).is(':selected')) {
+            active.append($(`<a data_type="${$(this).attr("data_type")}" style="margin-top:20px"/>`).html('<em>' + text + '</em><i></i>'));
+        } else {
+            list_el = ($(`<li data_type="${$(this).attr("data_type")}" />`));
+            list_el.append($(`<span class="multiple-text" />`).text(text))
+            if($(this).attr("data_type") == "THIRD_PARTY"){
+              list_el.append($(`<p class="multiple-heading" />`).text("Third Party"))
+            }else{
+              list_el.append($(`<p multiple-heading />`).text("Process"))
+            }
+            list.append(list_el);
+        }
+    });
+
+    active.append($('<div style="top:20px"/>').addClass('arrow'));
+    div.append(active).append(list);
+
+    select.wrap(div);
+
+    $(document).on('click', '.selectMultiple ul li', function(e) {
+        var select = $(this).parent().parent();
+        var li = $(this);
+        if(!select.hasClass('clicked')) {
+            select.addClass('clicked');
+            li.prev().addClass('beforeRemove');
+            li.next().addClass('afterRemove');
+            li.addClass('remove');
+            addThirdParty(li.children("span").text())
+            var a = $(`<a data_type="${li.attr("data_type")}" style="margin-top:20px" />`).addClass('notShown').html('<em>' + li.children("span").text() + '</em><i></i>').hide().appendTo(select.children('div'));
+            a.slideDown(400, function() {
+                setTimeout(function() {
+                    a.addClass('shown');
+                    select.children('div').children('span').addClass('hide');
+                    select.find('option:contains(' + li.children("span").text() + ')').prop('selected', true);
+                }, 500);
+            });
+            setTimeout(function() {
+                if(li.prev().is(':last-child')) {
+                    li.prev().removeClass('beforeRemove');
+                }
+                if(li.next().is(':first-child')) {
+                    li.next().removeClass('afterRemove');
+                }
+                setTimeout(function() {
+                    li.prev().removeClass('beforeRemove');
+                    li.next().removeClass('afterRemove');
+                }, 200);
+
+                li.slideUp(400, function() {
+                    li.remove();
+                    select.removeClass('clicked');
+                });
+            }, 600);
+        }
+    });
+
+    $(document).on('click', '.selectMultiple > div a i', function(e) {
+        var select = $(this).parent().parent().parent();
+        var self = $(this).parent();
+        self.removeClass().addClass('remove');
+        select.addClass('open');
+        removeThirdParty(self.children('em').text().trim().split("  ")[0])
+        setTimeout(function() {
+            self.addClass('disappear');
+            setTimeout(function() {
+                self.animate({
+                    width: 0,
+                    height: 0,
+                    padding: 0,
+                    margin: 0
+                }, 300, function() {
+                  var li = ($(`<li data_type="${$(this).attr("data_type")}" />`));
+                  li.append($(`<span class="multiple-text" />`).text(self.children('em').text().trim().split("  ")[0]))
+                  if(self.attr("data_type") == "THIRD_PARTY"){
+                    li.append($(`<p class="multiple-heading" />`).text("Third Party"))
+                  }else{
+                    li.append($(`<p multiple-heading />`).text("Process"))
+                  }
+                    li.addClass('notShown').appendTo(select.find('ul'));
+                      // sortList();
+                    li.slideDown(400, function() {
+                        li.addClass('show');
+                        setTimeout(function() {
+                            select.find('option:contains(' + self.children('em').text().trim().split("  ")[0] + ')').prop('selected', false);
+                            if(!select.find('option:selected').length) {
+                                select.children('div').children('span').removeClass('hide');
+                            }
+                            li.removeClass();
+                        }, 400);
+                    });
+                    self.remove();
+                })
+            }, 300);
+        }, 400);
+    });
+
+    $(document).on('click', '.selectMultiple > div', function(e) {
+        ul = $("#search_ul");
+        if (ul.hasClass('vendor_list')){
+          ul.removeClass("vendor_list")
+        }else{
+          ul.addClass("vendor_list")
+        }
+        $(this).parent().toggleClass('open');
+    });
+    // sortList()
+  });
+
+  function removeThirdParty(val){
+    var risk_type = $("#vendor").val().trim()
+    val = val.trim()
+    if(risk_type == val){
+      $("#vendor").val(null)
+    }else{
+      new_val = ", "+val
+      new_val1 = val + ","
+      risk_type = risk_type.replace(new_val, "")
+      risk_type = risk_type.replace(new_val1, "")
+      $("#vendor").val(risk_type)
+    }
+
+  }
+  function addThirdParty(val){
+    var risk_type = $("#vendor").val().trim()
+    val = val.trim()
+    if (risk_type == ""){
+      $("#vendor").val(val)
+    }else{
+      $("#vendor").val(risk_type + ", " + val)
+    }
+  }
+
+  var vendor_val = "{{form.vendor.value | safe}}"
+  if(vendor_val != "" | vendor_val != undefined | vendor_val != "None" ){
+    vendor_val = vendor_val.trim().split(", ")
+    $.each(vendor_val, function(i,e){
+        $('#linked_resource_select option[value="' + e.trim() + '"]').prop("selected", true);
+    });
+
+  }
+
+  function searchMultiple(){
+    var input, filter, ul, li, a, i, txtValue;
+    input = document.getElementById('search_input');
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("search_ul");
+    li = ul.getElementsByTagName('li');
+
+    for (i = 0; i < li.length; i++) {
+      txtValue = li[i].textContent || li[i].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        li[i].style.display = "";
+      } else {
+        li[i].style.display = "none";
+      }
+    }
+  }
+
+
+  $(document).on('click', function(e) {
+    var container1 = $(".selectMultiple > div");
+    var search = $("#search_ul");
+    if (!$(e.target).closest(container1).length && !$(e.target).closest(search).length) {
+      $(".selectMultiple > div").parent().removeClass('open');
+      ul = $("#search_ul");
+      ul.addClass("vendor_list")
+    }
+  });
+
+</script>
+
+{% endblock %}

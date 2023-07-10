@@ -1,0 +1,191 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} NoteTest {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-10" style="position: relative;">
+    <div class="comment-log">
+      <div class="notes-popup" id="edit-notes">
+        <form action="" id="edit-comment-form" class="form-container" method="post">
+          {% csrf_token %}
+          <div>
+            <button title="Save Edits" type="submit" class="cancel-btn rounded-circle ml-2"><i class="material-icons" aria-hidden="true" type="submit" style="font-size: 13px; padding-bottom: 3px;">arrow_upward</i></button>
+            <button title="Cancel Changes" type="button" style="padding-top: 4px; padding-bottom: 4px;" class="material-icons cancel-btn rounded-circle" onclick="closeForm()">clear</button>
+          </div>
+          <textarea rows="4" type="text" name="comment" id="edit-comment" style="color: black; border: none; width: 100%; font-size: 12px;"></textarea>
+        </form>
+      </div>
+      <div class="messages">
+        <ul id="chat-log" style="position: relative;">
+        </ul>
+      </div>
+      <form method="post" id="chat-message-form" action="{% url 'create-notes' %}">
+        {% csrf_token %}
+        <div class="message-input">
+          <div style="">
+            <hr style="width: 80%;
+      float: left;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+      border: 0;
+      border-top: 1px solid gray;">
+            <button title="Post Note" class="submit" id="chat-message-submit"><i class="material-icons" aria-hidden="true" type="submit">arrow_upward</i></button>
+          </div>
+          <div class="wrap">
+              <textarea rows="4" style="border: none;
+      font-size: 12px; width: 95%;" placeholder="Type notes here ..." id="chat-message-input" name="comment"></textarea>
+          </div>
+        </div>
+       </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#chat-message-form').submit(function() {
+        var note = $("#chat-message-input").val().trim()
+        if (note == ""){
+          return false
+        }
+        $.ajax({
+            data: $(this).serialize(),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            success: function(response) {
+                $("#chat-message-input").val("")
+                newMessage()
+            }
+        });
+        return false;
+    });
+    newMessage()
+});
+
+function getDate(date) {
+    var today = new Date();
+    var created_at = new Date(date);
+    var date_text = ""
+    if (created_at.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
+        date_text = "Today"
+    } else if (new Date(created_at.getDate() - 1).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 1)).setHours(0, 0, 0, 0)) {
+        date_text = "1d"
+    } else if (new Date(created_at.getDate() - 2).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 2)).setHours(0, 0, 0, 0)) {
+        date_text = "2d"
+    } else if (new Date(created_at.getDate() - 3).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 3)).setHours(0, 0, 0, 0)) {
+        date_text = "3d"
+    } else if (new Date(created_at.getDate() - 4).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 4)).setHours(0, 0, 0, 0)) {
+        date_text = "4d"
+    } else if (new Date(created_at.getDate() - 5).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 5)).setHours(0, 0, 0, 0)) {
+        date_text = "5d"
+    } else {
+        var month = created_at.getUTCMonth() + 1;
+        var day = created_at.getUTCDate();
+        var year = created_at.getUTCFullYear();
+        date_text = month + "/" + day + "/" + year;
+    }
+    return date_text
+}
+$('#edit-comment-form').submit(function() {
+    var id = $("#edit-comment-form").attr("note_id")
+    var edit_note = $("#edit-comment").val().trim()
+    if (edit_note == ""){
+      return false
+    }
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            console.log("called forms")
+            var edited = $("#edit-comment").val()
+            var edit_p = "#msg_" + id
+            console.log(edit_p)
+            $(edit_p).text(edited)
+
+            closeForm()
+        }
+    });
+    return false;
+});
+
+function openForm(text, id) {
+    console.log("edit notes")
+    var msg_id = "#msg_"+id
+    var text = $(msg_id).text()
+    $("#edit-comment").val(text)
+    var form_url = "/notetest/edit/" + id
+    $("#edit-comment-form").attr("action", form_url)
+    $("#edit-comment-form").attr("note_id", id)
+    document.getElementById("edit-notes").style.display = "block";
+}
+
+function closeForm() {
+    document.getElementById("edit-notes").style.display = "none";
+}
+
+function newMessage() {
+    $.ajax({
+        type: "GET",
+        url: "{% url 'create-notes' %}",
+        success: function(response) {
+            data = response.data
+            $("#chat-log").empty();
+            for (i = 0; i < data.length; i++) {
+                var message = data[i]['comment'];
+                var author = data[i]['author_id'];
+                var msgListTag = document.createElement('li');
+                author_name = data[i]['author_first_name'][0].toUpperCase() + data[i]['author_last_name'][0].toUpperCase()
+                var divTag = document.createElement('div');
+                var spanAuthor = document.createElement('span');
+                var spanDate = document.createElement('span');
+                var spanOuter = document.createElement('span');
+                spanAuthor.className = "user_name"
+                spanAuthor.textContent = author_name;
+                spanAuthor.setAttribute("title", data[i]['author_first_name'] + " " + data[i]['author_last_name'])
+                spanDate.className = "message_date"
+                spanDate.textContent = getDate(data[i]['created_at']);
+                divTag.className = "edit-message"
+                var pTag = document.createElement('p');
+                pTag.textContent = message
+                if (author == "{{request.user.id}}") {
+                    var iTag = document.createElement("i")
+                    iTag.className = "material-icons edit_notes_icon"
+                    iTag.textContent = "edit_note"
+                    iTag.setAttribute("onclick", `openForm('${data[i]['comment']}', '${data[i]['id']}')`)
+                    iTag.setAttribute("title", "Edit Note")
+                    msgListTag.className = "replies"
+                    divTag.appendChild(iTag)
+                    spanOuter.appendChild(spanDate)
+                    spanOuter.appendChild(spanAuthor)
+                } else {
+                    msgListTag.className = "sent"
+                    spanOuter.appendChild(spanAuthor)
+                    spanOuter.appendChild(spanDate)
+                }
+                divTag.appendChild(spanOuter)
+                msgListTag.appendChild(divTag)
+                pTag.setAttribute("id", "msg_"+data[i]['id'])
+                msgListTag.appendChild(pTag)
+                document.querySelector('#chat-log').appendChild(msgListTag);
+            }
+            $(".messages").scrollTop($(".messages")[0].scrollHeight);
+        }
+    });
+}
+
+</script>
+{% endblock javascripts %}

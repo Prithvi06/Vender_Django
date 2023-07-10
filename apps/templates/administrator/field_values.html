@@ -1,0 +1,170 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load render_table from django_tables2 %}
+{% block title %} Third Parties {% endblock %}
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+
+{% endblock stylesheets %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+   <ol class="breadcrumb">
+   <li class="breadcrumb-item"><a href="{% url 'administrator' organization.id %}">Administration</a></li>
+   <li class="breadcrumb-item">Field Values</li>
+</nav>
+{% endblock breadcrumb %}
+{% block content %}
+<div class="row">
+   <div class="col-12">
+      <!-- popup delete -->
+      <div class="modal fade" id="deleteBusiness" tabindex="-1" role="dialog" aria-labelledby="deleteBusinessTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              <h4><span id="confirmWarn"></span> <b id="confirmCount"></b><span id="confirmRecord"></span></h4>
+              <h4 id="confirmMessage" class="pb-5"></h4>
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" href="#" id="confirmYes">Yes</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      <div class="card">
+         <div class="card-header card-header-primary">
+            <h4 class="card-title">
+               Field Values
+            </h4>
+         </div>
+         <div class="card-body">
+            <div class="row mt-5">
+               <div class="col-12 col-md-4">
+                  <div class="card-header card-header-primary organization-header">
+                     <h4 class="card-title">
+                        Category
+                     </h4>
+                  </div>
+                  <div class="categories mt-4">
+                     <ul class="list-group p-3">
+                        {% for category in category %}
+                        <li class="list-group-item p-0">
+                           <form method="post" action="{% url 'field-category' organization.id category %}" class="category-form-{{forloop.counter}} d-flex justify-content-between" id="category-form-{{forloop.counter}}">
+                              {% csrf_token %}
+                           <span id="category_name_{{forloop.counter}}" style="word-break:break-all;">{{category}}</span>
+                           <div class="icon-div">
+                              <input type="text" name="name" value="{{category}}" id="category_input_{{forloop.counter}}" style="display:none;" class="category_name" />
+                              <span id="category_icon_{{forloop.counter}}" class="icon-span">
+                                 <span class="tooltip-parent">
+                                   <i class="material-symbols-outlined cancel-icon" onclick="cancelBusinessTypes('{{forloop.counter}}', 'category')">highlight_off</i>
+                                   <span class="tooltiptext" style="left: -270%;">Cancel</span>
+                                 </span>
+                                 <span class="tooltip-parent">
+                                   <i class="material-symbols-outlined add-icon" onclick="saveBusinessTypes('{{forloop.counter}}', 'category', 'save')">check_circle</i>
+                                   <span class="tooltiptext" style="left: -270%;">Save</span>
+                                 </span>
+                              </span>
+                           </div>
+                           <div class="d-flex" id="category_editicon_{{forloop.counter}}">
+                              <span class="tooltip-parent">
+                                 <a id="category_edit_{{forloop.counter}}" onclick="edit_business_level('{{forloop.counter}}', 'category', '{{category}}')">
+                                 <i class="material-icons edit-icon">border_color</i>
+                                 </a>
+                                 <span class="tooltiptext" style="left: -300%;">Edit</span>
+                              </span>
+                              <span class="tooltip-parent">
+                                 <a href="#" class="pl-1 delete_category" onclick="saveBusinessTypes('{{forloop.counter}}', 'category', 'delete')">
+                                    <i class="material-symbols-outlined icon_alignment" style="font-size:20px">delete</i></a>
+                                 <span class="tooltiptext" style="left: -215%;">Delete</span>
+                               </span>
+                              <a href="{% url 'field-category-delete' organization.id category %}" id="category_delete_{{forloop.counter}}" hidden></a>
+                           </div>
+                           </form>
+                        </li>
+                        {% endfor %}
+                     </ul>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+   function levelSelector(){
+      document.getElementById("business_type").submit()
+   }
+
+
+   function saveBusinessTypes(id, type, action) {
+      $("#deleteBusiness").modal('show');
+      if(type == 'category'){
+         const url = '/organizations/'+ '{{organization_pk}}' + '/category/' + id
+         $.ajax({
+            url: url,
+            type: "GET",
+            success: function (data) {
+              console.log(data)
+              total = data['count']
+              console.log(total)
+              $('#confirmCount').text(total+' ')
+            }
+          })
+      }
+      if(action == 'delete'){
+         $("#confirmWarn").text('Deleting this value will change it on ')
+         $("#confirmRecord").text(type + ' records.')
+         $("#confirmMessage").text('Are you sure you want make this change?')
+         $("#confirmYes").text('Yes - Delete')
+      }
+      if(action == 'save'){
+         $("#confirmWarn").text('Changing this value will change it on ')
+         $("#confirmRecord").text(type + ' records.')
+         $("#confirmMessage").text('Are you sure you want make this change?')
+         $("#confirmYes").text('Yes - Change')
+      }
+      document.getElementById('confirmYes').setAttribute('onclick',`BusinessClick('${action}', '${type}', '${id}')`)
+   }
+
+   function BusinessClick(action, type, id){
+      console.log('click')
+      if(action == 'save'){
+         const form_id = type + "-form-"+id
+        document.getElementById(form_id).submit()
+      }
+      if(action == 'delete'){
+         const delete_id = type + "_delete_" + id
+         document.getElementById(delete_id).click()
+      }
+   }
+
+   function edit_business_level(id, type, value){
+      const input_id = type + "_input_" + id
+      const span_id = type + "_name_" + id
+      const edit = type + "_edit_" + id
+      const span_icon_id = type + "_icon_" + id
+      const span_editicon_id = type + "_editicon_" + id
+      document.getElementById(span_editicon_id).style.setProperty("display", "none", "important");
+      document.getElementById(span_icon_id).style.display = "block";
+      document.getElementById(span_id).style.display = "none";
+      document.getElementById(edit).style.display = "none";
+      document.getElementById(input_id).value = value;
+      document.getElementById(input_id).style.display = "block";
+   }
+   function cancelBusinessTypes(id, type){
+      const input_id = type + "_input_" + id
+      const span_id = type + "_name_" + id
+      const edit = type + "_edit_" + id
+      const span_icon_id = type + "_icon_" + id
+      const span_editicon_id = type + "_editicon_" + id
+      document.getElementById(span_editicon_id).style.setProperty("display", "flex", "important");
+      document.getElementById(span_icon_id).style.display = "none";
+      document.getElementById(span_id).style.display = "block";
+      document.getElementById(edit).style.display = "block";
+      document.getElementById(input_id).style.display = "none";
+   }
+</script>
+{% endblock javascripts %}

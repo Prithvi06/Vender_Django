@@ -1,0 +1,96 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Incidents {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Incidents
+          <a style="text-decoration: none;" href="{% url 'incident-create' %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <h5 style="font-size: 14px;">
+              <i class="material-icons" style="font-size: 16px;">filter_list</i>
+              <span class="pl-2 pr-2">Filter:</span>
+              <select class="filter-select" id="filter_by" onchange="parentFilter()">
+                <option value="">Select....</option>
+                <option value="status" {% if request.GET.filter_by == "status" %} selected {% endif %}>Status</option>
+              </select>
+              <span class="pl-2 pr-2">By:</span>
+              <select class="filter-select parent-select" id="default-filter" {% if request.GET.filter_by and request.GET.filter_by != "" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+              </select>
+              <select class="filter-select parent-select" id="incident-filter" {% if request.GET.filter_by != "status" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% for key, value in status.items %}
+                <option value="{{key}}" {% if request.GET.status == key %} selected {% endif %}>{{value}}</option>
+                {% endfor %}
+              </select>
+              <button type="button" class="btn btn-primary" style="padding: 8px 17px;" onclick="incidentFilter()">Go</button>
+            </h5>
+          </div>
+          <div class="col-md-4 col-12">
+            <form url="{% url 'incidents' %}" spellcheck="false" autocomplete="off">
+              <div class="input-group no-border justify-content-end">
+                <input name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                  value="{{ search }}" />
+                <button class="btn btn-round btn-white btn-just-icon" type="submit">
+                  <em class="material-icons">search</em>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="table-responsive">
+          {% render_table tabledata %}
+        </div>
+      </div>
+      {% else %}
+      <p>There are no incidents.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+
+  function parentFilter(){
+    var filter_val = $("#filter_by").val()
+    $(".parent-select").hide()
+    if(filter_val == "status"){
+      $("#incident-filter").show()
+    }else{
+      $("#default-filter").show()
+    }
+  }
+  function incidentFilter(){
+    var val = $("#incident-filter").val()
+    var filter_by = $("#filter_by").val()
+
+    if (filter_by != "" && val != ""){
+      let url = new URL(window.location)
+      url = url.href.toString().split("?")[0]
+      url = new URL(url)
+      url.searchParams.set("filter_by", filter_by);
+      url.searchParams.set("status", val);
+      window.location.href = url;
+    }
+  }
+</script>
+{% endblock javascripts %}

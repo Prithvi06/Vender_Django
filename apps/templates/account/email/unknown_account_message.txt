@@ -1,0 +1,13 @@
+{% extends "account/email/base_message.txt" %}
+{% load i18n %}
+
+{% block content %}{% autoescape off %}{% blocktrans %}You are receiving this e-mail because you or someone else has requested a
+password using your email address.  However, we do not have any record of a user
+with email {{ email }} in our database.
+
+This mail can be safely ignored if you did not request a password reset.
+
+If you do need access to the system, please contact your company's administrator.{% endblocktrans %}
+
+- The Gracen Team
+{% endautoescape %}{% endblock %}

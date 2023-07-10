@@ -1,0 +1,410 @@
+{% extends "layouts/admin_base.html" %}
+{% load render_table from django_tables2 %}
+{% load djf_survey_tags %}
+
+
+{% block title %} Risks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+  .dropzone {
+    display: flex;
+    height: 100px;
+    border: 2px dashed #ccc;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+  }
+
+  .dropzone div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropzone.dragover {
+    border-color: #F26622;
+    color: white;
+    border-width: 5px;
+    background-color: #f2672258;
+    font-weight: bold;
+  }
+  .hide_icon, .edit_icon{
+    display: none;
+  }
+  #cancel-icon:hover, #add-icon:hover, #edit-icon:hover{
+    cursor: pointer;
+    color: #686565 !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'gracen_admin_home' %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:gracen_admin_survey' %}">Questionnaires</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:gracen_admin_edit_survey' survey.slug %}">{{survey}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Edit Questions
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Edit Questions
+        </h4>
+      </div>
+      {% if question %}
+      <div class="card-body">
+        <a href="{% url 'djf_surveys:gracen_admin_edit_survey' survey.slug %}" class="btn btn-dark pull-right">Done Editing</a>
+        <div style="clear: both;"></div>
+        <!-- popup -->
+          <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center pt-5">
+                  <h4 class="pb-5">Are you sure you want delete this Question?</h4>
+                  <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                  <a type="button" class="btn btn-primary pull-right" id="survey-delete-btn">Yes - Delete</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end -->
+          <div class="d-flex">
+            <div id="sortable" class="question_top_div">
+            {% for field in form %}
+            {% if not field.field.widget.attrs.question_type == 'na_explain' %}
+            <div class="main_header_div">
+              <form method="post" action="{% url 'djf_surveys:create_question_header' field|get_id_field %}?question_type=GRACEN_ADMIN" spellcheck="false"  autocomplete="off" class="header_form"> 
+                  {% csrf_token %}
+                  {% if field.field.widget.attrs.header %}
+                  <div id="header_main_{{field|get_id_field}}" style="display: flex;">
+                    <div class="form-group bmd-form-group header_form" draggable="false" id="header_{{field|get_id_field}}" onmouseover="inputOver('{{field|get_id_field}}')" onmouseout="inputOut('{{field|get_id_field}}')">
+                      <div style="position: relative;">
+                        <input type="text" class="text-dark header_input header_with_val" name="header" id="header-input-{{field|get_id_field}}" value="{{field.field.widget.attrs.header|default_if_none:''|title}}" default_val="{{field.field.widget.attrs.header|default_if_none:''|title}}" 
+                    readonly=True>
+                    <span class="tooltip-parent" style="position: absolute; right: 10px; z-index: 2;">
+                      <i class="material-icons hide_icon border_color_icon" id="edit-icon_{{field|get_id_field}}" onclick="Editvalue('{{field|get_id_field}}')">border_color</i>
+                      <span class="tooltiptext" style="left: -305%; bottom: 171%;">Edit Header</span>
+                    </span>
+                      <span class="header_with_val_span">
+                        <span class="tooltip-parent">
+                          <i class="material-symbols-outlined hide_icon save_cancel_icon cancel-icon" id="cancel-icon_{{field|get_id_field}}" onclick="cancelUpdate(this, '{{field|get_id_field}}', 'UPDATE')">highlight_off</i>
+                          <span class="tooltiptext">Cancel</span>
+                        </span>
+                        <span class="tooltip-parent">
+                          <i class="material-symbols-outlined hide_icon save_cancel_icon add-icon" id="add-icon_{{field|get_id_field}}" onclick="updateHeader(this, '{{field|get_id_field}}')">check_circle</i>
+                          <span class="tooltiptext">Save</span>
+                        </span>
+                      </span>
+                      </div>
+                        <button type="submit" class="submit-btn" id="header_submit_{{field|get_id_field}}" style="display:none;">Submit</button>
+                    </div>
+                    <div class="header-section"></div>
+                    <div class="header-section add_header hide_btn">
+                      <a href="{% url 'djf_surveys:question_header_remove' field|get_id_field %}?question_type=GRACEN_ADMIN" class="btn btn-sm btn-primary add_header_btn" id="button-{{field.name}}" btn_name="REMOVE_HEADER">Remove header</a>
+                    </div>
+                  </div>
+                  {% else %}
+                  <div id="header_main_{{field|get_id_field}}" style="display: flex;" class="main_header_section">
+                    <div class="form-group bmd-form-group header_form hide_form" draggable="false" id="header_{{field|get_id_field}}" style="position: relative;">
+                      <input type="text" class="form-control header_input" name="header" id="header-input-{{field|get_id_field}}" style="z-index: 1; position: relative;" value="{{field.field.widget.attrs.header|default_if_none:''}}">
+                      <span class="span_without_header">
+                        <span class="tooltip-parent">
+                          <i class="material-symbols-outlined hide_icon save_cancel_icon cancel-icon" id="cancel-icon_{{field|get_id_field}}" onclick="cancelUpdate(this, '{{field|get_id_field}}', 'ADD')">highlight_off</i>
+                          <span class="tooltiptext">Cancel</span>
+                        </span>
+                        <span class="tooltip-parent">
+                          <i class="material-symbols-outlined hide_icon save_cancel_icon add-icon" id="add-icon_{{field|get_id_field}}" onclick="updateHeader(this, '{{field|get_id_field}}')">check_circle</i>
+                          <span class="tooltiptext">Save</span>
+                        </span>
+                      </span>
+                    </div>
+                    <button type="submit" class="submit-btn" id="header_submit_{{field|get_id_field}}" style="display:none;">Submit</button>
+                    <div class="header-section"></div>
+                    <div class="header-section add_header hide_btn">
+                      <div class="d-flex">
+                        <button type="button" class="btn btn-sm btn-primary add_header_btn" id="button-{{field|get_id_field}}">Add Header</button>
+                        <div class="header_input_place" id="header_input_place_{{field|get_id_field}}"></div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                </form>
+              </div>
+            <div class="question_tile {% if field.field.widget.attrs.header_question_count < 2  and field.field.widget.attrs.header != None  %} unsortable {% endif %}" id="{{ field|get_id_field }}">
+              <div class="dice_div">
+                <h6 class="text-center question_number tooltip-parent tooltip-parent2 question_number_tip" style="display: block !important;"><span>{{field.field.widget.attrs.question_count}}</span><span class="tooltiptext">{{field.field.widget.attrs.question_id}} - [{{field.field.widget.attrs.question_key}}]</span></h6>
+                <div class="sixth-face dice" style="{% if field.field.widget.attrs.header_question_count < 2  and field.field.widget.attrs.header != None %} cursor: not-allowed; {% else %} cursor: pointer; {% endif %}"">
+                  <i class="material-icons drag_indicators">drag_indicator</i>
+                </div>
+              </div>
+              <div class="question_tile_div">
+              <a  class="delete-btn tooltip-parent" href="{% url 'djf_surveys:gracen_admin_edit_question' field|get_id_field %}"><i class="material-icons" style="font-size: 17px; color: grey;">border_color</i><!-- <span class="tooltiptext">Delete Survey</span> --></a>
+              <a  class="delete-btn tooltip-parent mr-1" data-toggle="modal" data-target="#deleteTask" onclick="deleteSurvey('{% url "djf_surveys:gracen_admin_delete_question" field|get_id_field %}')"><i class="material-symbols-outlined icon_alignment" style="font-size: 23px; color: grey;">delete</i><!-- <span class="tooltiptext">Delete Survey</span> --></a>
+              <h5>{{field.label}}</h5>
+              <div class="mt-1">
+                  {% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'checkbox' %}
+                  <div class="form-group" style="padding-bottom:0px;">
+                      {{ field }}
+                      {% if field.field.widget.attrs.question_type == 'Yes-No-NA' %}
+                        <div class="form-group bmd-form-group is-filled mt-4 pb-1">
+                            <div style="display: flex; justify-content: space-between;">
+                              <label class="auto-label" style="font-size:14px!important">If N/A, explain</label>
+                              <span class="help-block"><span class="label_count">0</span> / 500</span>
+                            </div>
+                          <textarea name="na_explain_{{field.field.widget.attrs.question_id}}" class="text-div" style="height: 60px;  width: 100%;"></textarea>
+                        </div>
+                      {% endif %}
+                  </div>
+                  {% elif field.field.widget.input_type == 'hidden' %}
+                  <div class="rating">
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="stars" value="1" />
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="stars" value="2" />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="stars" value="3" />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>   
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="stars" value="4" />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="stars" value="5" />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                  </div>
+                  {% elif field.field.widget.attrs.indicator == 'date' %}
+                  <div class="form-group bmd-form-group">
+                    <input type="date" name="{{field.name}}" class="form-control" id="{{field.auto_id}}" required="{{field.field.required}}">
+                  </div>
+                  {% elif field.field.widget.input_type == 'file' %}
+                  <div style="height: 230px;">
+                    <input type="file" id="id_path{{field.name}}" name="{{field.name}}" value="{{field.value}}" required="{{field.field.required}}" style="padding: 2px 0px 0px 0px;height: 0px;" onchange="selectDocument('{{field.name}}')">
+                    <div class="dropzone question_dropzone" id="dropzone{{field.name}}" ondrop="drop(event, '{{field.name}}')" ondragover="dragOverElement(event, '{{field.name}}')" ondragleave="dragLeaveElement(event, '{{field.name}}')">
+                      <div>
+                        <div>Drag & Drop File Here</div>
+                        <div id="id_current_file{{field.name}}">{% if field.value %}Current File: {{ field|document_value }}{% endif %}</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-primary pull-left" onclick="ChangeFile('{{field.name}}')">
+                      Browse To Upload File
+                    </button>
+                  </div>
+                  {% else %}
+                  <div class="form-group">
+                    {% if field.field.widget.input_type == 'text' %}
+                      {{ field|addclass:'form-control' }}
+                      <span class="help-block" style="float:right;"><span class="label_count">{{field.value|length}}</span> / 500</span>
+                    {% else %}
+                      {{ field|addclass:'form-control' }}
+                    {% endif %}
+                    
+                  </div>
+                  {% endif %}
+              </div>
+              <div class="help_text" style="height:40px">{{field.help_text}}</div>
+            </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            </div>
+          </div>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Questions.</p>
+      {% endif %}
+      <div class="text-center m-5">
+        <a type="button" class="btn btn-primary" href="{% url 'djf_surveys:gracen_admin_create_question' object.id %}">
+             Add New Question
+          </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<!-- <script src="https://code.jquery.com/jquery-3.6.1.js"></script> -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script type="text/javascript">
+
+  $("#sortable").sortable({
+    cancel: ".header_form, .unsortable, :input, textarea, select, option"
+  });
+
+  function charCount(e){
+    label_len = e.value.length
+    if (label_len >= 500) {
+      e.value = e.value.substring(0, 500)
+    }
+    e.parentElement.getElementsByClassName("label_count")[0].innerText = e.value.length
+  }
+
+$(document).on("click",".add_header_btn",function(e) {
+  $(this).siblings('.header_input_place').hide()
+  var btn_id = $(this).attr('id');
+  var form_id = btn_id.split("-");
+  $('#header_' + form_id[1]).toggleClass('hide_form');
+  $('#' + 'header-input-' + form_id[1]).prop("readonly", false);
+  $('#header-input-' + form_id[1]).focus()
+  $("#cancel-icon_"+form_id[1]).removeClass("hide_icon");
+  $("#add-icon_"+form_id[1]).removeClass("hide_icon");
+  $(".add_header_btn").hide()
+});
+
+function cancelUpdate(e, input_id, type) {
+    $("#cancel-icon_"+input_id).addClass("hide_icon");
+    $("#add-icon_"+input_id).addClass("hide_icon");
+    $(".add_header_btn").show()
+    $("#header_input_place_"+input_id).show()
+    $("#header-input-"+input_id).blur()
+    $('#' + 'header-input-' + input_id).prop("readonly", true);
+    if(type == "ADD"){
+      $("#header-input-"+input_id).val('')
+      $('#header_' + input_id).toggleClass('hide_form');
+    }else{
+      $("#header-input-"+input_id).val($("#header-input-"+input_id).attr("default_val"))
+      $("#header-input-"+input_id).removeClass("form-control")
+    }
+}
+function updateHeader(e, id) {
+  $("#header_submit_"+id).click()
+}
+function inputOver(id) {
+  if ($("#add-icon_"+id).hasClass("hide_icon")){
+      $("#edit-icon_"+id).removeClass("hide_icon")
+  }
+}
+function inputOut(id) {
+    $("#edit-icon_"+id).addClass("hide_icon")
+}
+$('.header-section').mouseenter(function(){
+  $(this).siblings('.add_header').show()
+})
+$('.header-section').mouseleave(function(){
+  $(this).siblings('.add_header').hide();
+})
+$('.add_header_btn').mouseenter(function(){
+  $(this).show()
+})
+$('.add_header').mouseenter(function(){
+  $(this).show()
+})
+$('.add_header').mouseleave(function(){
+  $(this).hide()
+})
+function Editvalue(input_id){
+  $("#edit-icon_"+input_id).addClass("hide_icon");
+  $("#cancel-icon_"+input_id).removeClass("hide_icon");
+  $("#add-icon_"+input_id).removeClass("hide_icon");
+  var input = $('#' + 'header-input-' + input_id)
+  $('#' + 'header-input-' + input_id).focus()
+  var tmpStr = input.val();
+  input.val('');
+  input.val(tmpStr);
+  $('#' + 'header-input-' + input_id).addClass('form-control')
+  var url_name = "{% url 'djf_surveys:question_header_update' 0 %}".replace('0', input_id)
+  $('#' + 'header-input-' + input_id).prop("readonly", false);
+  $('.header_form').attr('action', `${url_name}?question_type=GRACEN_ADMIN`);
+}
+  if("{{request.GET.Redirect}}"){
+    $('html,body').animate({scrollTop: document.body.scrollHeight},"fast");
+    const url = new URL(window.location);
+    url.searchParams.set('Redirect', "Redirect");
+    new_url = url.toString().split("?")[0]
+    window.history.pushState(null, '', new_url);
+  }
+  function deleteSurvey(url){
+    document.getElementById("survey-delete-btn").href = url
+  }
+
+function deleteSurvey(url){
+  document.getElementById("survey-delete-btn").href = url
+}
+  $(function () {
+            $("#sortable").sortable({
+                opacity: 0.7,
+                update: function (event, ui) {
+                    const order = $(this).sortable('toArray');
+                    var on_header = false
+                    if (order.length > order.indexOf(ui.item[0].id)){
+                      if (order[order.indexOf(ui.item[0].id)+1] != ""){
+                          on_header = true
+                      }
+                    }
+                    $.ajax({
+                        url: "{% url 'djf_surveys:gracen_admin_change_order_question' %}",
+                        type: 'POST',
+                        headers: {"X-CSRFToken": '{{csrf_token}}'},
+                        data: {
+                            'order_question': order.toString(),
+                            "order_question_id": ui.item[0].id,
+                            "on_header": on_header
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            $(".question_number").get().forEach(function(entry, index, array) {
+                                entry.textContent = index + 1
+                            });
+                            window.location.reload()
+                        },
+                        error: function (data) {
+                            alert("An error occured!");
+                        }
+                    });
+                }
+            });
+        });
+</script>
+<script>  
+  function drop(e, value){
+    var fileinput = document.getElementById('id_path'+value);
+    var filename = $("#id_current_file"+value);
+    fileinput.files = e.dataTransfer.files;
+    filename.text("Current File: " + e.dataTransfer.files[0].name);
+    e.preventDefault();
+    document.getElementById("dropzone"+value).className = 'dropzone';
+  }
+  function dragOverElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone dragover';
+    event.preventDefault()
+  }
+  function dragLeaveElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone';
+    event.preventDefault()
+  }
+  function ChangeFile(name){
+    document.getElementById("id_path"+name).click();
+  }
+  function selectDocument(name) {
+    var filename = $("#id_current_file"+name);
+    filename.text("Current File: " + $("#id_path"+name)[0].files[0].name);
+  };
+</script>
+{% endblock javascripts %}

@@ -1,0 +1,174 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block title %} Import Questionnaire {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .auto-label{
+    top: -1rem !important;
+    font-size: 0.6875rem !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    color: #AAAAAA !important;
+  }
+  .dropzone {
+    display: flex;
+    height: 250px;
+    border: 2px dashed #ccc;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+    width: 80%;
+    margin: auto;
+  }
+
+  .dropzone div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropzone.dragover {
+    border-color: #F26622;
+    color: white;
+    border-width: 5px;
+    background-color: #f2672258;
+    font-weight: bold;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'gracen_admin_home' %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:gracen_admin_survey' %}">Questionnaire</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Import Questionnaire
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Import Questionnaire
+            {% if object.id %}
+            {% endif %}
+          </h4>
+          <p class="card-category">Import the Questionnaire</p>
+        </div>
+        <div class="card-body">
+          <div>
+            <input type="file" name="file" id="id_path" hidden required>
+            <div class="dropzone" id="dropzone">
+              <div>
+                <div>Drag & Drop File Here</div>
+                <div id="id_current_file">{% if model.name %}Current File: {{ model.name }}{% endif %}</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary pull-left" onclick="ChangeFile()">
+            Browse To Upload File
+          </button>
+          </div>
+          <button type="submit" class="btn btn-primary pull-right">
+            Import Questionnaire
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'djf_surveys:gracen_admin_survey' %}">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+  <div class="modal fade" id="showErrors" tabindex="-1" role="dialog" aria-labelledby="deleteDocumentTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-body pt-5" id="msg-body">
+          <ul>
+              {% for message in messages %}
+              <li style="color: red;">{{ message }}</li>
+              {% endfor %}
+          </ul>
+          <button type="button" class="btn btn-primary pull-left" data-dismiss="modal" style="float: right;">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a class="showErrors" data-toggle="modal" data-target="#showErrors" hidden></a>
+
+  <div class="modal fade" id="showSuccess" tabindex="-1" role="dialog" aria-labelledby="deleteDocumentTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-body pt-5" id="msg-body">
+          <h4 style="color: #3C4858; text-align: center; margin-bottom: 50px;">Questionnaire imported successfully!</h4>
+          <a href="" class="btn btn-primary" id="gracen_admin_survey">Questionnaire</a>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" style="float: right;">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a class="showSuccess" data-toggle="modal" data-target="#showSuccess" hidden></a>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  var error = '{{ error }}'
+  var success = '{{ success }}'
+  var survey = '{{ survey }}'
+  if (error){
+    ele = document.getElementsByClassName("showErrors")[0]
+    ele.click()
+  } else if (success){
+      body = document.getElementById("gracen_admin_survey")
+      body.href = "{% url 'djf_surveys:gracen_admin_edit_survey' 'em' %}".replace("em", survey)
+      ele = document.getElementsByClassName("showSuccess")[0]
+      ele.click()
+    }
+
+  (function () {
+    var dropzone = document.getElementById('dropzone');
+    var fileinput = document.getElementById('id_path');
+    var filename = $("#id_current_file");
+
+    dropzone.ondrop = function (e) {
+      fileinput.files = e.dataTransfer.files;
+      filename.text("Current File: " + e.dataTransfer.files[0].name);
+      e.preventDefault();
+      this.className = 'dropzone';
+    };
+
+    dropzone.ondragover = function () {
+      this.className = 'dropzone dragover';
+      return false;
+    };
+
+    dropzone.ondragleave = function () {
+      this.className = 'dropzone';
+      return false;
+    };
+  }());
+
+  function ChangeFile(){
+    document.getElementById("id_path").click();
+    var name = document.getElementById('id_path')
+  }
+  document.getElementById('id_path').onchange = function () {
+    var filename = $("#id_current_file");
+    filename.text("Current File: " + this.files[0].name);
+};
+</script>
+{% endblock javascripts %}

@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  {% trans "Verify Your E-mail Address" %}
+{% endblock title %}
+
+{% block content %}
+  <div class="row align-items-center" style="height: calc(100vh - 220px);">
+    <div class="offset-md-3 col-md-5 my-auto registration-modal">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">{% trans "Verify Your E-mail Address" %}</h4>
+        </div>
+        <div class="card-body">
+          <p>{% trans "We have sent an e-mail to you for verification." %}</p>
+          <p>
+            {% trans "Please follow the link provided to finalize the signup process. If you do not see the verification e-mail in your inbox, check your spam folder." %}
+          </p>
+          <p>{% trans "Please contact us if you do not receive the verification e-mail within a few minutes." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

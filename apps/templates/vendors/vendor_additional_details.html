@@ -1,0 +1,233 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Third Party Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+<style type="text/css">
+  textarea{
+    resize: vertical !important;
+    overflow: auto !important;
+  }
+  .btn-disabled, .btn-disabled:hover{
+    color: gray !important;
+    cursor: not-allowed !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'vendor-edit' model.id %}?section={{section}}">{{ model.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Additional Details
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Additional Details</h4>
+          <p class="card-category">Update the additional details</p>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="row">
+                <div class="col-9">
+                  <div class="form-group bmd-form-group">
+                  <label class="bmd-label-floating">{{ form.website.label }}</label>
+                  {{ form.website }}
+                </div>
+                </div>
+                <div class="col-3 pt-4">
+                  <a class="redirect_btn" onclick="redirect('{{form.website.value}}')" id="website_input_btn">
+                    <img src="{% static 'assets/img/baseline_open_in_browser_black_24dp.png' %}" width="20" height="20">
+                  Browse
+                  </a>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-9">
+                  <div class="form-group bmd-form-group">
+                    <label class="bmd-label-floating">{{ form.twitter.label }}</label>
+                    {{ form.twitter }}
+                  </div>
+                </div>
+                <div class="col-3 pt-4">
+                  <a class="redirect_btn" onclick="redirect('{{form.twitter.value}}')" id="twitter_input_btn">
+                    <img src="{% static 'assets/img/baseline_open_in_browser_black_24dp.png' %}" width="20" height="20">
+                    Browse
+                  </a>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-9">
+                  <div class="form-group bmd-form-group">
+                    <label class="bmd-label-floating">{{ form.linkedin.label }}</label>
+                    {{ form.linkedin }}
+                  </div>
+                </div>
+                <div class="col-3 pt-4">
+                  <a class="redirect_btn" onclick="redirect('{{form.linkedin.value}}')" id="linkedin_input_btn">
+                    <img src="{% static 'assets/img/baseline_open_in_browser_black_24dp.png' %}" width="20" height="20">
+                    Browse
+                  </a>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-9">
+                  <div class="form-group bmd-form-group">
+                    <label class="bmd-label-floating">{{ form.facebook.label }}</label>
+                    {{ form.facebook }}
+                  </div>
+                </div>
+                <div class="col-3 pt-4">
+                  <a class="redirect_btn" onclick="redirect('{{form.facebook.value}}')" id="facebook_input_btn">
+                    <img src="{% static 'assets/img/baseline_open_in_browser_black_24dp.png' %}" width="20" height="20">
+                    Browse
+                  </a>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-9">
+                  <div class="form-group bmd-form-group">
+                    <label class="bmd-label-floating">{{ form.stock_symbol.label }}</label>
+                    {{ form.stock_symbol }}
+                  </div>
+                </div>
+                <div class="col-3 pt-4">
+                  <a {% if form.stock_symbol.value %} href="https://www.google.com/search?q=Stock Symbol {{form.stock_symbol.value}}" target="_blank" {% else %} class="btn-disabled" {% endif %} id="stock_symbol_btn">
+                    <img src="{% static 'assets/img/baseline_open_in_browser_black_24dp.png' %}" width="20" height="20">
+                    Browse
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="bmd-label-floating">{{ form.notes.label }}</label>
+              <div class="form-group bmd-form-group">
+                {{ form.notes }}
+                <div id="menu-area" class="menu-area" role="listbox"></div>
+                <div onkeyup="updateNotes()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 219px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-notes">
+                  {{model.get_notes | safe}}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          
+          <button type="submit" class="btn btn-primary pull-right">
+            Update Additional Details
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'vendor-edit' model.id %}?section={{section}}">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if model.id %}
+
+{% endif %}
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function redirect(val){
+      if(val != null){
+        if(val.includes('https://')){
+          window.open(val, '_blank').focus();
+        }else if(val.includes('http://')){
+          window.open(val, '_blank').focus();
+        }else{
+          val = 'https://'+val
+          window.open(val, '_blank').focus();
+        }
+      }  
+  }
+  const validate_url = (url) => {
+    var res = url.match(
+    /^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?\/?$/gm
+    );
+    if (res == null) return false;
+    else return true;
+  };
+
+   function getWebsiteURL(btn_id, input_id){
+      if(validate_url($(input_id).val()) == true){
+          $(btn_id).attr("onclick", `redirect("${$(input_id).val()}")`)
+          $(btn_id).removeClass("btn-disabled")
+      }else{
+        $(btn_id).removeAttr("onclick")
+        $(btn_id).addClass("btn-disabled")
+      }
+   }
+  function activeBrowse(val=null){
+    if(val != null){
+        if(val == "twitter"){
+          getWebsiteURL("#twitter_input_btn", "#twitter_input")
+        }else if(val == "linkedin"){
+          getWebsiteURL("#linkedin_input_btn", "#linkedin_input")
+        }else if(val == "facebook"){
+          getWebsiteURL("#facebook_input_btn", "#facebook_input")
+        }else if(val == "website"){
+          getWebsiteURL("#website_input_btn", "#website_input")
+        }else if(val == "stock_symbol"){
+          if($("#stock_symbol_input").val() != ""){
+            $("#stock_symbol_btn").attr("href", `https://www.google.com/search?q=Stock Symbol ${$("#stock_symbol_input").val()}`)
+            $("#stock_symbol_btn").attr("target", "_blank")
+            $("#stock_symbol_btn").removeClass("btn-disabled")
+          }else{
+            $("#stock_symbol_btn").removeAttr("href")
+            $("#stock_symbol_btn").removeAttr("target")
+            $("#stock_symbol_btn").addClass("btn-disabled")
+          }
+          
+        }
+    }else{
+      // twitter
+      getWebsiteURL("#twitter_input_btn", "#twitter_input")
+      // linkedin
+      getWebsiteURL("#linkedin_input_btn", "#linkedin_input")
+      // facebook
+      getWebsiteURL("#facebook_input_btn", "#facebook_input")
+      // website
+      getWebsiteURL("#website_input_btn", "#website_input")
+    }
+    
+  }
+  function updateNotes(){
+    $("#notes-text").val($("#edit-div-notes").html().trim())
+  }
+  new Mentionify(
+      document.getElementById('edit-div-notes'),
+      document.getElementById('menu-area'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area",
+      "#edit-div-notes",
+      "#notes-text",
+      0
+    )
+  activeBrowse()
+</script>
+{% endblock javascripts %}

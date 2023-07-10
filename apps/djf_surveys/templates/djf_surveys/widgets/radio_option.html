@@ -1,0 +1,9 @@
+{% if widget.wrap_label %}
+    <label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %} class="flex items-center text-sm" style="padding-top: 0px;padding-bottom: 0.4rem;margin-bottom:0px;margin-top:0.5rem">
+{% endif %}
+        <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}
+            class="w-6 h-6 border-gray-200">
+        <span class="ml-3 font-medium">{{ widget.choice_label }}</span>
+{% if widget.wrap_label %} {{ widget.label }}
+    </label>
+{% endif %}

@@ -1,0 +1,155 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Organization Users {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+    .is_active>ul{
+        display: flex;
+        justify-content: space-between;
+        list-style-type: none;
+    }
+    .is_active>ul>li{
+        margin-left: 20px;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization.id %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'org_user_list' organization.id %}">Users</a></li>
+    <li class="breadcrumb-item">
+     {% if organizationuser.id %}
+      Edit User
+      {% else %}
+      Invite User
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">
+            {% if organizationuser.id %}
+            Edit User
+            {% else %}
+            Invite User
+            {% endif %}
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12 {% if organizationuser.id %} col-md-6 {% endif %}">
+              <div class="form-group bmd-form-group">
+                {{ form.email }}
+                <label class="bmd-label-floating">{{ form.email.label }}</label>
+                {{ form.errors.email }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.first_name }}
+                <label class="bmd-label-floating">{{ form.first_name.label }}</label>
+                {{ form.errors.first_name }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.last_name }}
+                <label class="bmd-label-floating">{{ form.last_name.label }}</label>
+                {{ form.errors.last_name }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                {{ form.role }}
+                <label class="bmd-label-floating">{{ form.role.label }}</label>
+                {{ form.errors.role }}
+              </div>
+              {% if organizationuser.id %}
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="id_new_password1" class="bmd-label-floating">{{ form.new_password1.label }}</label>
+                    {{ form.new_password1 }}
+                    {{ form.new_password1.errors }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="id_new_password2" class="bmd-label-floating">{{ form.new_password2.label }}</label>
+                    {{ form.new_password2 }}
+                    {{ form.new_password2.errors }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group d-flex is_active">
+                    <label class="bmd-label-floating">{{ form.is_active.label }}</label>
+                    {{ form.is_active }}
+                    {{ form.is_active.errors }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group is_active">
+                    <label class="bmd-label-floating">{{ form.document_permission.label }}</label>
+                    {{ form.document_permission }}
+                    {{ form.document_permission.errors }}
+                  </div>
+                </div>
+            </div>
+          </div>
+          
+          
+          </div>
+          <span id="password-register" style="display: none;"><b>Password Strength: <span id="register-strength">WEAK</span></b></span>
+          {% endif %}
+          <input type="submit" class="btn btn-primary pull-right"
+            value="{% if organizationuser.id %}Update{% else %}Create{% endif %}">
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  $("#Password1").keyup(function(){
+      var password = zxcvbn($(this).val())
+      $("#password-register").hide()
+      if(($(this).val().length) <= 0){
+        $("#password-register").hide()
+      }else{
+        if(password.score == 3){
+          $("#password-register").show()
+          $("#password-register").css("color", "orange");
+          $("#register-strength").text("MODERATE");
+        }else if(password.score == 4){
+          $("#password-register").show()
+          $("#password-register").css("color", "green");
+          $("#register-strength").text("STRONG");
+        }else{
+          $("#password-register").show()
+          $("#password-register").css("color", "red");
+          $("#register-strength").text("WEAK");
+        }
+      }
+      
+  });
+</script>
+{% endblock javascripts %}

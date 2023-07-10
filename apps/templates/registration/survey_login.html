@@ -1,0 +1,75 @@
+{% extends "layouts/survey_base.html" %}
+
+{% block title %} Questionnaire Login {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center">
+<div class="align-items-center mt-4" style="height: calc(100vh - 220px);">
+  {% if token %}
+  <div>
+      <div class="text-gray text-center" style="font-weight: 500; font-size:15px;">
+        <p>
+          {{org}} has requested that you complete the following questionnaire:<br>
+          <span>{{survey}}</span>
+        </p>
+      </div>
+  </div>
+    
+  <div class="my-auto registration-modal align-items-center">
+    <div class="card survey_login" style="width: 85%; margin-top: 80px;">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">Login</h4>
+      </div>
+      <div class="card-body">
+        <h6 class="card-category">
+          {% if msg %}
+          <span class="text-danger">{{ msg | safe }}</span>
+          {% endif %}
+        </h6>
+
+        <br />
+        <form role="form" method="post" spellcheck="false" autocomplete="off">
+          {% csrf_token %}
+          <br />
+          <div class="text-center text-gray" style="font-weight: 600;">
+            <span style="padding: 11px;">Please enter the password from the second email you received.<span></div>
+          <br />
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label class="bmd-label-floating">Password</label>
+                <input type="password" name="password" class="form-control" required
+                  id="id_password">
+              </div>
+            </div>
+          </div>
+          <br />
+          <button type="submit" name="login" class="btn btn-primary pull-right" style="width: 170px;">Sign In</button>
+          <div class="clearfix"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="col-md-10 col-sm-10 ">
+    <div class="text-gray text-center" style="font-weight: 500; font-size:15px;">
+      <p>
+        This link is no longer valid. Reach out to the contact in your original email to get an updated link.
+      </p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+</div>
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

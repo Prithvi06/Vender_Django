@@ -1,0 +1,101 @@
+{% extends "layouts/base.html" %}
+
+{% load i18n %}
+{% load static %}
+{% load site_providers %}
+
+{% block title %}
+  {% trans "Sign In" %}
+{% endblock %}
+
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="row align-items-center" style="height: calc(100vh - 220px);">
+    <div class="offset-md-3 col-md-5 my-auto registration-modal">
+      <div class="card">
+        <div class="card-body">
+
+          <div class="text-center">
+            <img alt="gracen logo"
+                 src="{% static 'assets/img/gracen-icon.png' %}"
+                 style="width: 60px;
+                        margin-top: 20px">
+            <h3 class="font-weight-bold" style="font-size: 200%; margin-bottom: 50px">Log in to Gracen</h3>
+          </div>
+
+          <ul class="socialaccount_providers">
+            {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+          </ul>
+
+          {% get_providers as socialaccount_providers %}
+          {% if not socialaccount_providers %}
+            <h6 class="card-category">
+              {% if msg %}<span class="text-danger">{{ msg | safe }}</span>{% endif %}
+            </h6>
+
+            <form role="form"
+                  method="post"
+                  action="{% url 'account_login' %}"
+                  spellcheck="false"
+                  autocomplete="off">
+
+              {% csrf_token %}
+
+              {{ form.non_field_errors|safe }}
+
+              {% if redirect_field_value %}
+                <input type="hidden"
+                       name="{{ redirect_field_name }}"
+                       value="{{ redirect_field_value }}"/>
+              {% endif %}
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="bmd-label-floating">{{ form.label.login }}</label>
+                    <input type="email"
+                           name="login"
+                           placeholder="Email Address"
+                           class="form-control"
+                           required
+                           id="id_login">
+                    {{ form.login.errors }}
+                  </div>
+                </div>
+              </div>
+
+              <br />
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="bmd-label-floating">{{ form.label.password }}</label>
+                    <input type="password"
+                           name="password"
+                           placeholder="Password"
+                           class="form-control"
+                           required
+                           id="id_password">
+                  </div>
+                </div>
+              </div>
+
+              <br />
+
+              <a class="btn pull-left" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+              <button type="submit" class="btn btn-primary pull-right">Login</button>
+
+              <div class="clearfix"></div>
+
+            </form>
+          {% endif %}
+
+          <div style="height: 50px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}

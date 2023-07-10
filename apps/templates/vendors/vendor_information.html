@@ -1,0 +1,1669 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Third Party Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .header-tile{
+    min-height: 164px;
+    min-width: 170px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 15px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .header-tile>p{
+    color: #999;
+    font-size: 14px;
+    margin-bottom: 8px;
+    width: calc(100% - 70px);
+    float: right;
+    margin-left: auto;
+    word-wrap: break-word;
+    word-break: break-word;
+    text-align: right;
+  }
+  .tile-body{
+    text-align: right;
+    min-height: 80px;
+    width: calc(100% - 70px);
+    margin-left: auto;
+    word-break: break-all;
+    word-wrap: break-word;
+  }
+  .tile-body>p, .tile-body>span{
+    padding: 0px;
+    margin: 0px;
+    font-size: 12px;
+
+  }
+  .tile-contact>li{
+    line-height: 1.7;
+  }
+  .tile-icon{
+    position: absolute;
+    background-color: #bfbfbf;
+    color: white;
+    border-radius: 3px;
+    padding: 5px;
+    margin-right: 12px;
+    box-shadow: 0 4px 20px 0 #fff8f5;
+
+  }
+  .tile-icon>i{
+    font-size: 44px;
+    line-height: 50px;
+    width: 54px;
+    height: 50px;
+    text-align: center;
+  }
+  .tile-active{
+    border: 2px solid orange;
+  }
+  .third-party-details>h5{
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .third-party-details>p{
+    font-size: 12px;
+  }
+  .tile-footer{
+      padding: 0;
+      padding-top: 10px;
+      margin: 0;
+      border-radius: 0;
+      border-top:  1px solid lightgrey;
+      min-height: 53px;
+  }
+  .tile-footer>a{
+    height: 35px;
+    padding: 10px 30px;
+  }
+  .search_li{
+    width: 100%;
+  }
+  pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.vl{
+  top: 32px;
+}
+.option:hover{
+    background: #007bff !important;
+    color: white !important;
+}
+.ts-dropdown,
+.item,
+.ts-control,
+.ts-control input{
+    color: #49505 !important;
+}
+.ts-control{
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #49505 !important;
+    padding:0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+.ts-dropdown{
+    color: #49505 !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    top: 85% !important;
+}
+.ts-dropdown-content{
+    color: #495057 !important;
+}
+.ts-dropdown .active{
+    background: #007bff !important;
+    color: white !important;
+}
+
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Third Party
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<!-- vendor form -->
+<form method="post" spellcheck="false" autocomplete="off" id="vendor-form" {% if model.id and not form.errors  %} style="display: none;" {% endif %}>
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Third Party</h4>
+          <p class="card-category">Update the third party profile</p>
+        </div>
+        <div class="card-body">
+          <!-- History log starts -->
+          <pre class="history-log" id="history_log" style="min-height: 480px; height: 580px; bottom: -8px;">
+            {{model.get_history | safe}}
+          </pre>
+          <!-- History log end -->
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.name.label }}</label>
+                {{ form.name }}
+              </div>
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.legal_name.label }}</label>
+                {{ form.legal_name }}
+              </div>
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.tax_id_number.label }}</label>
+                {{ form.tax_id_number }}
+              </div>
+              {{ form.errors.tax_id_number }}
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.legal_structure.label }}</label>
+                {{ form.legal_structure }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.is_offshore.label }}</label>
+                {{ form.is_offshore }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.critical.label }}</label>
+                {{ form.critical }}
+              </div>
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group is-filled">
+                    <label class="bmd-label-floating">{{ form.inherent_risk.label }}</label>
+                    {{ form.inherent_risk }}
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group is-filled">
+                    <label class="bmd-label-floating">{{ form.residual_risk.label }}</label>
+                    {{ form.residual_risk }}
+                  </div>
+                </div>
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="auto-label label-padding">{{ form.risk_type.label }}</label>
+                {{ form.risk_type }}
+               <select multiple class="form-control" name="risk_type_" id="risk_type_select">
+                  <option value="Reputation">Reputation</option>
+                  <option value="Compliance">Compliance</option>
+                  <option value="Strategic">Strategic</option>
+                  <option value="Transaction">Transaction</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Political">Political</option>
+                  <option value="Technology">Technology</option>
+                  <option value="Credit">Credit</option>
+                </select>
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.rank.label }}</label>
+                {{ form.rank }}
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="notes_btn_height">
+                <span class="pull-right history_icon">
+                  <span class="tooltip-parent" id="history_btn" {% if model.id %} onclick="showHistory()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined pr-1">history</span>
+                    <span class="tooltiptext">History</span>
+                  </span>
+                </span>
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.status.label }}</label>
+                {{ form.status }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.category.label }}</label>
+                  {{ form.category }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.org_business_process.label }}</label>
+                <select class="form-control" name="org_business_process" id="select-unit">
+                    <option value=""></option>
+                    {% for udp in org_business_process %}
+                        <option value="{{udp.0}}" {% if udp.0 == model.org_business_process.id %} selected {% endif %}>{{udp.1}}</option>
+                    {% endfor %}
+                </select>
+                {{ form.errors.org_business_process }}
+              </div>
+
+              <div class="form-group bmd-form-group is-filled">
+                {{ form.owner }}
+                <label class="bmd-label-floating">{{ form.owner.label }}</label>
+                {{ form.errors.owner }}
+              </div>
+
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.vendor_optional_id.label }}</label>
+                {{ form.vendor_optional_id }}
+                {{ form.errors.vendor_optional_id }}
+              </div>
+
+              <div class="form-group bmd-form-group is-filled mt-3">
+                <label class="auto-label">{{ form.risk_description.label }}</label>
+                {{ form.risk_description }}
+                {{ form.errors.risk_description }}
+                <div id="menu-area" class="menu-area" role="listbox"></div>
+                <div onkeyup="updateNotes()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 218px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-description">
+                  {{model.get_risk_description | safe}}
+                </div>
+              </div>
+            </div>
+          </div>          
+          {% if model.id %}
+            <a type="button" class="btn btn-dark additional_details" href="{% url 'additional-details' model.id %}?section={{section}}" id="additional_details">
+             Additional Details
+            </a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Third Party
+          </button>
+          {% if model.id %}
+          <button type="button" class="btn btn-dark pull-right mr-3" id="cancel-edit-vendor">
+             Cancel
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+<!-- end vendor form -->
+
+{% if model.id %}
+<!-- popup for OFAC Results -->
+      {% if ofac_results %}
+      <div class="modal fade" id="matchedContact" tabindex="-1" role="dialog" aria-labelledby="matchedContact" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+          <div class="modal-content">
+             <div class="model-header card-header-primary ">
+                <h4 class="">Possible OFAC / SDN Match</h4>
+              </div>
+            <div class="modal-body pt-5">
+
+              <h6 class="pb-3" style="font-size: 14px; text-transform: capitalize;">We found a possible match to this contact on the OFAC / SDN list. Please review and decide how you want to proceed.</h6>
+              <div class="mb-4 p-2 pl-3 pr-3" style="overflow-y: scroll; height:400px; border: 1px solid lightgrey;">
+                {% for result in ofac_results %}
+                <div class="mb-3">
+                <p style="font-size: 14px">{{result.created_at}}</p>
+                <p style="font-size: 14px">Match Type: (SDN NAME ({{result.total_sdn}}), ADDRESSES ({{result.total_address}}), ALIASES ({{result.total_alias}}))</p>
+                <p class="p-0 keys">Number: {{result.result.Number}}</p>
+                <p class="p-0 keys">Name: {{result.result.Name}}</p>
+                <p class="p-0 keys">Title: {{result.result.Title}}</p>
+                <p class="p-0 keys">Remarks: {{result.result.Remarks}}</p>
+                {% if result.result.Aliases %}
+                  <p class="mb-2 mt-3"> ---Aliases---</p>
+                  {% for alias in result.result.Aliases %}
+                    <p class="p-0 keys">Alt Name: {{alias.AltName}}</p>
+                    <p class="p-0 keys">Remarks: {{alias.Remarks}}</p>
+                  {% endfor %}
+                {% endif %}
+                {% if result.result.Addresses %}
+                  <p class="mb-2 mt-3"> ---Addresses---</p>
+                  {% for address in result.result.Addresses %}
+                    <p class="p-0 keys">Address: {{address.Address}}</p>
+                    <p class="p-0 keys">Remarks: {{address.Remarks}}</p>
+                  {% endfor %}
+                {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              <a class="btn btn-primary pull-left" href="{% url 'ignore-ofac-result' model.id %}">Ignore - This is not a match</a>
+              <a type="button" class="btn btn-primary pull-right" href="{% url 'create-ofac-result-task' model.id %}">Create a Task - Research further</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      {% endif %}
+<!-- vendor information -->
+{% if not form.errors %}
+<div class="row" id="vendor-information">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">Third Party Information</h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 third-party-details">
+              <h5 class="m-0">Name</h5>
+              <p class="p-0">{{model.name}}</p>
+          </div>
+          <div class="col-md-2 third-party-details">
+              <h5 class="m-0">Inherent Risk</h5>
+              <p class="p-0">{{model.get_inherent_risk_display}}</p>
+          </div>
+          <div class="col-md-3 third-party-details">
+              <h5 class="m-0">Category</h5>
+              {% if model.category %}
+              <p class="p-0">{{model.category}}</p>
+              {% endif %}
+          </div>
+          <div class="col-md-4 third-party-details">
+              <h5 class="m-0">Third Party Relationship Owner</h5>
+              {% if model.owner %}
+              <p class="p-0">{{model.owner.first_name}} {{model.owner.last_name}} ({{model.owner.email}})</p>
+              {% endif %}
+          </div>
+          <div class="col-md-3 third-party-details">
+              <h5 class="m-0">Tax ID Number</h5>
+              {% if model.tax_id_number %}
+              <p class="p-0">{{model.tax_id_number}}</p>
+              {% endif %}
+          </div>
+          <div class="col-md-2 third-party-details">
+              <h5 class="m-0">Residual Risk</h5>
+              <p class="p-0">{{model.get_residual_risk_display}}</p>
+          </div>
+          <div class="col-md-3 third-party-details">
+              <h5 class="m-0">Business Process</h5>
+              {% if model.org_business_process%}
+              <p class="p-0">{{model.org_business_process.unit.name}} - {{model.org_business_process.department.name}} - {{model.org_business_process.process.name}}</p>
+              {% endif %}
+          </div>
+          <div class="col-md-4 third-party-details">
+              <h5 class="m-0">Is Critical?</h5>
+              {% if model.critical == True %}
+              <p class="p-0">Yes</p>
+              {% else %}
+              <p class="p-0">No</p>
+              {% endif %}
+          </div>
+          <div class="col-12">
+          {% if model.id %}
+            <a type="button" class="btn btn-dark additional_details" href="{% url 'additional-details' model.id %}?section={{section}}" id="additional-details">
+             Additional Details
+            </a>
+            {% if incident_objs %}
+              <span class="dropdown vendor_incident_dropdown">
+                <a href="#" class="incident_dropdown dropdown_margin"
+                        id="dropdownMenuButton" 
+                        data-toggle="dropdown" 
+                        aria-haspopup="true" 
+                        aria-expanded="false">
+                    <i class="material-icons">report_problem</i><span>
+                      {{incident_objs|length}} Active {% if incident_objs|length == 1 %} Incident {% else %} Incidents {% endif %}
+                    </span>
+                </a>
+                <div class="dropdown-menu"  
+                     aria-labelledby="dropdownMenuButton">
+                     {% for item in incident_objs %}
+                    <a class="dropdown-item incident-items" href="{% url 'incident-edit' item.id %}" >{{item.title | capfirst}}</a>
+                    {% endfor %}
+                </div>
+              </span>
+            {% endif%}
+            <button type="button" class="btn btn-primary pull-right btn_alignment" id="view-edit-vendor">
+             View / Edit Profile
+            </button>
+          {% endif %}
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end vendor information -->
+{% endif %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="row pl-2">
+      <div class="col-md-3 col-lg-2 col-sm-6 mt-5" style="min-width: 250px;">
+        <div id="task_tile" class="card header-tile {% if section == "TASK" %} tile-active {% endif %}">
+            <div class="tile-icon">
+            <i class="material-icons mt-1">task</i>
+            </div>
+            <p> <span class="pull-right" >Tasks ({{task_section.total}})</span></p>
+
+          <div class="tile-body">
+            <p>
+              Not Started ({{task_section.not_started_total}})
+            </p>
+            <p>
+              In Process ({{task_section.in_process_total}})
+            </p>
+            <p>
+              On Hold ({{task_section.hold_total}})
+            </p>
+          </div>
+          <div class="tile-footer">
+              <button class="btn btn-primary pull-right section_view_btn" id="task_section_view">View</button>
+          </div>
+        </div>
+    </div>    
+    <div class="col-md-3 col-lg-2 col-sm-6 mt-5" style="min-width: 250px;">
+        <div id="contract_tile" class="card header-tile {% if section == "CONTRACTS" %} tile-active {% endif %}">
+          <div class="tile-icon">
+            <i class="material-icons mt-1" style="font-size: 36px; line-height: 57px;">border_color</i>
+          </div>
+          <p><span class="pull-right">Contracts ({{contract_section.total}})</span></p>
+          <div class="tile-body">
+            <p>
+               Exp 30 Days ({{contract_section.next_30}})
+            <p>
+               Exp 180 Days ({{contract_section.next_180}})
+            </p>
+          </div>
+          <div class="tile-footer">
+              <button class="btn btn-primary pull-right section_view_btn" id="contract_section_view">View</button>
+          </div>
+        </div>
+    </div>
+    {% if document_permission %}
+    <div class="col-md-3 col-lg-2 col-sm-6 mt-5" style="min-width: 250px;">
+        <div id="document_tile" class="card header-tile {% if section == "DOCUMENTS" %} tile-active {% endif %}">
+          <div class="tile-icon">
+            <i class="material-icons mt-1">folder</i>
+          </div>
+          <p><span class="pull-right">Documents ({{document_section.total}})</span></p>
+          <div class="tile-body">
+            <p>
+              Recent ({{document_section.last_30}})
+            </p>
+          </div>
+          <div class="tile-footer">
+              <button class="btn btn-primary pull-right section_view_btn" id="document_section_view">View</button>
+          </div>
+          </div>
+        </div>
+      {% endif %}
+    <div class="col-md-3 col-lg-2 col-sm-6 mt-5" style="min-width: 250px;">
+        <div id="contact_tile"  class="card header-tile {% if section == "CONTACTS" %} tile-active {% endif %}">
+          <div class="tile-icon">
+            <i class="material-icons mt-1">contact_page</i>
+          </div>
+          <p><span class="pull-right">Contacts ({{contact_section.total}})</span></p>
+          <div style="display: flex; justify-content: space-between;">
+            <div class="tile-body">
+              {% if contact_section.contact %}
+                <span>
+                  {{contact_section.contact.first_name}} {{contact_section.contact.last_name}} |
+                  {{contact_section.contact.get_role_display}}
+                </span>
+                 <br>
+                {% if contact_section.phone %}
+                <span>
+                  {{contact_section.phone}} |
+                </span>
+                {% endif %}
+                <span>
+                   {{contact_section.contact.email}}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="tile-footer">
+              <button class="btn btn-primary pull-right section_view_btn" id="contact_section_view">View</button>
+          </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-lg-2 col-sm-6 mt-5" style="min-width: 250px;">
+        <div id="question_tile" class="card header-tile {% if section == "QUESTIONNAIRE" %} tile-active {% endif %}">
+          <div class="tile-icon">
+            <i class="material-icons mt-1">dynamic_form</i>
+          </div>
+          <p><span class="pull-right">Questionnaires ({{vendor_survey_count}})</span></p>
+          <div class="tile-body">
+           <p>
+              Open ({{open_questionnaire}})
+            </p>
+            <p>
+              Activity ({{last_viewed.last_activity.date}})
+            </p>
+          </div>
+          <div class="tile-footer">
+              <button class="btn btn-primary pull-right section_view_btn" id="question_section_view">View</button>
+          </div>
+          </div>
+        </div>
+    </div>
+    </div>
+  </div>
+
+<div class="row section_view" id="task_section" style="display: none;">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">
+            Tasks
+            <a style="text-decoration: none;" href="{% url 'vendor-task-create' model.id %}">
+              <i class="material-icons">add_circle</i>
+            </a>
+          </h4>
+        </div>
+        <div class="card-body">
+          {% if tasks %}
+          <div class="table-responsive">
+            <table class="table table-hover table-sm">
+              <thead>
+                <tr>
+                  <th scope="col">Title</th>
+                  <th scope="col" class="hide_in_mobile_view">Created Date</th>
+                  <th scope="col">Due Date</th>
+                  <th scope="col">Priority</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for task in tasks %}
+                <tr>
+                  <th scope="row">
+                    <a href="{% url 'vendor-task-edit' task.id model.id %}">
+                      {{ task }}
+                    </a>
+                  </th>
+                  <td class="hide_in_mobile_view">{{ task.created_at.date }}</td>
+                  <td>
+                    {% if task.due_date %}
+                      <div style='display:flex'><div class='circle_div'>{{task.get_status_task | safe }}</div> <span>{{ task.due_date }}</span></div>
+                      
+                     {% endif %}
+                  </td>
+                  <td>{{ task.get_priority_display }}</td>
+                  <td>{{ task.get_status_display }}</td>
+                  <td>
+                    {% if task.owner %}
+                    {{ task.owner }}
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p>There are no tasks.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="row section_view" id="contact_section" style="display: none;">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Contacts
+          <a style="text-decoration: none;" href="{% url 'contact-create' model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if contacts %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for contact in contacts %}
+              <tr>
+                <th scope="row">
+                  <a href="{% url 'contact-edit' model.id contact.id %}">
+                    {{ contact }}
+                  </a>
+                </th>
+                <td>{{ contact.email }}</td>
+                <td>
+                  {% if contact.preferred_phone %}
+                  <a href="{% url 'phone-edit' model.id contact.id contact.preferred_phone.id %}">
+                    {{ contact.preferred_phone }}
+                  </a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no contacts.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row section_view" id="contract_section" style="display: none;">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Contracts
+          <a style="text-decoration: none;" href="{% url 'contract-create' model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if contracts %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Effective Date</th>
+                <th scope="col">Next Expiration</th>
+                <th scope="col">Renewal Deadline</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for contract in contracts %}
+            <tr>
+              <td style="display: flex;">
+                <!-- decide icon -->
+                  <div class="cross_circle"><i class="material-symbols-outlined cros_icon">{{contract.get_icon}}</i></div>
+                <!-- end decide icon -->
+                <!-- draw line -->
+                {% if contract.get_draw_line %}
+                  <div {% if contract.get_child_count == 1  and not contract.get_seding_line %} class="vl last-vl" style="height: calc(100% - 8px); top: 32px;" {% elif contract.get_seding_line and contract.get_childs %} style=" height: 100%; top: 32px;" class="vl"{% else %} style=" height: calc(100% - 17px); top: 32px;" class="vl" {% endif %}></div>
+                {% endif %}
+                <!-- end draw line -->
+
+                <a href="{% url 'contract-edit' model.id contract.id %}" class="contract-title">
+                  {{ contract.title }}
+                </a>
+              </td>
+              <td>{{ contract.effective_date }}</td>
+              <td>{{ contract.next_expiration }}</td>
+              <td>{{ contract.renewal_reminder_date }}</td>
+            </tr>
+            {% for child in contract.get_childs %}
+              <tr>
+                <td style="display: flex;margin-left: 20px !important;">
+
+                  <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child.get_icon}}</i></div>
+                    {% if forloop.counter > 1 or not forloop.last  %}
+                    <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not contract.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px;" {% endif %} style="{% if contract.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child.get_line_height}} + 8px);{% else %}height: {{child.get_line_height}};{% endif %}" ></div>
+                    {% endif %}
+                    {% if child.get_draw_line %}
+                      <div {% if child.get_child_count == 1  and not child.get_seding_line %} class="vl last-vl" style="height: calc({{child.get_line_height}} - 8px); left: 38px;" {% else %} style="left: 38px; height: calc({{child.get_line_height}} - 17px);" class="vl" {% endif %}></div>
+                    {% endif %}
+                    <!-- draw first verticle line -->
+                    {% if contract.get_seding_line or forloop.counter < contract.get_child_count %}
+                    <div class="vl" {% if child.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                    {% endif %}
+                    <!-- end first vl -->
+                    <div class="hl"></div>              
+                     <a href="{% url 'contract-edit' model.id child.id %}" class="contract-title">
+                        {{ child.title }}
+                      </a>
+                </td>
+                <td>{{ child.effective_date }}</td>
+                <td>{{ child.next_expiration }}</td>
+                <td>{{ child.renewal_reminder_date }}</td>
+              </tr>
+              {% for child_sec in child.get_childs %}
+                <tr>
+                  <td style="display: flex;margin-left: 40px !important;">
+
+                    <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child_sec.get_icon}}</i></div>
+                      {% if forloop.counter > 1 or not forloop.last  %}
+                      <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px; left: 38px;" {% endif %} style="{% if child.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child_sec.get_line_height}} + 8px);{% else %}height: {{child_sec.get_line_height}};{% endif %}left: 38px;" ></div>
+                      {% endif %}
+                      {% if child_sec.get_draw_line %}
+                        <div {% if child_sec.get_child_count == 1  and not child_sec.get_seding_line %} class="vl last-vl" style="height: calc(100% - 8px); left: 58px;" {% else %} style="left: 58px; height: calc(100% - 17px);" class="vl" {% endif %}></div>
+                      {% endif %}
+                      <!-- draw first verticle line -->
+                      {% if contract.get_seding_line or forloop.parentloop.counter < contract.get_child_count %}
+                      <div class="vl" {% if child_sec.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                      {% endif %}
+                      <!-- end first vl -->
+                      <!-- draw second vl -->
+                      {% if child.get_seding_line or not forloop.last %}
+                      <div class="vl" {% if child_sec.get_draw_line %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                      {% endif %}
+                      <!-- end second vl -->
+                      <div class="hl" style="left: 38px;"></div>           
+                       <a href="{% url 'contract-edit' model.id child_sec.id %}" class="contract-title">
+                          {{ child_sec.title }}
+                        </a>
+                  </td>
+                  <td>{{ child_sec.effective_date }}</td>
+                  <td>{{ child_sec.next_expiration }}</td>
+                  <td>{{ child_sec.renewal_reminder_date }}</td>
+                </tr>
+                {% for related in child_sec.get_superseded_by %}
+                  <tr class="superseded_by_list">
+                      <td style="display: flex; margin-left: 40px !important;">
+                        <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                        <!-- decide icon -->
+                        {{ related.get_icon }}</i></div>
+                        <!-- end decide icon -->
+
+                        <!-- draw line -->
+                        {% if related.get_draw_line %}
+                          <div {% if related.get_child_count == 1  and not related.get_seding_line %} class="vl last-vl" style="left: 58px; height: calc(100% - 7px);" {% else %} style="left: 58px; height: calc(100% - 17px)" class="vl" {% endif %}></div>
+                        {% endif %}
+                        <!-- end draw line -->
+                        <!-- first vl -->
+                        {% if contract.get_seding_line or forloop.parentloop.parentloop.counter < contract.get_child_count and not forloop.parentloop.last %}
+                        <div class="vl" {% if related.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                        {% endif %}
+                        <!-- end first vl -->
+                         {% if child.get_seding_line or not forloop.parentloop.last %}
+                        <div class="vl" {% if related.get_draw_line %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                        {% endif %}
+
+                        <a href="{% url 'contract-edit' model.id related.id %}" class="contract-title">
+                          {{ related.title }} 
+                        </a>
+                      </td>
+                      <td>{{ related.effective_date }}</td>
+                      <td>{{ related.next_expiration }}</td>
+                      <td>{{ related.renewal_reminder_date }}</td>
+                    </tr>
+                  {% endfor %}
+              {% endfor %}
+              {% for related in child.get_superseded_by %}
+                <tr class="superseded_by_list">
+                    <td style="display: flex; margin-left: 20px !important;">
+                      <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                      <!-- decide icon -->
+                      {{ related.get_icon }}</i></div>
+                      <!-- end decide icon -->
+
+                      <!-- draw line -->
+                      {% if related.get_draw_line or forloop.parentforloop.counter < child.get_child_count %}
+                        <div {% if related.get_child_count == 1  and not related.get_seding_line %} class="vl last-vl" style="left: 38px; height: calc({{related.get_line_height}} - 8px);" {% else %} style="left: 38px; height: calc({{related.get_line_height}} - 17px);" class="vl" {% endif %}></div>
+                      {% endif %}
+                      <!-- end draw line -->
+                      <!-- first vl -->
+                      {% if contract.get_seding_line or forloop.parentloop.counter < contract.get_child_count %}
+                      <div class="vl" {% if related.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                      {% endif %}
+                      <!-- end vl -->
+
+                      <a href="{% url 'contract-edit' model.id related.id %}" class="contract-title">
+                        {{ related.title }}
+                      </a>
+                    </td>
+                    <td>{{ related.effective_date }}</td>
+                    <td>{{ related.next_expiration }}</td>
+                    <td>{{ related.renewal_reminder_date }}</td>
+                  </tr>
+                  {% for child_third in related.get_childs %}
+                    <tr>
+                      <td style="display: flex;margin-left: 40px !important;">
+
+                        <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child_third.get_icon}}</i></div>
+                          {% if forloop.counter > 1 or not forloop.last  %}
+                          <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not related.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px; left: 38px;" {% endif %} style="{% if related.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child_third.get_line_height}} + 8px);{% else %}height: {{child_third.get_line_height}};{% endif %} left: 38px;" ></div>
+                          {% endif %}
+                          {% if child_third.get_draw_line %}
+                            <div {% if child_third.get_child_count == 1  and not child_third.get_seding_line %} class="vl last-vl" style="height: calc(100% - 8px); left: 58px;" {% else %} style="left: 58px; height: calc(100% - 17px);" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- first vl -->
+                          {% if contract.get_seding_line or forloop.parentloop.parentloop.counter < contracts.get_child_count %}
+                          <div class="vl" {% if child_third.get_draw_line or related.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                          {% endif %}
+                          <!-- end first vl -->
+                          {% if related.get_seding_line or forloop.counter < child.get_child_count %}
+                          <div class="vl" {% if related.get_draw_line and not forloop.last %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                          {% endif %}
+                          <div class="hl" style="left: 38px;"></div>           
+                           <a href="{% url 'contract-edit' model.id child_third.id %}" class="contract-title">
+                              {{ child_third.title }}
+                            </a>
+                      </td>
+                      <td>{{ child_third.effective_date }}</td>
+                      <td>{{ child_third.next_expiration }}</td>
+                      <td>{{ child_third.renewal_reminder_date }}</td>
+                    </tr>
+                    {% for third_related in child_third.get_superseded_by %}
+                    <tr class="superseded_by_list">
+                        <td style="display: flex; margin-left: 40px !important;">
+                          <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                          <!-- decide icon -->
+                          {{ third_related.get_icon }}</i></div>
+                          <!-- end decide icon -->
+
+                          <!-- draw line -->
+                          {% if third_related.get_draw_line %}
+                            <div {% if third_related.get_child_count == 1  and not third_related.get_seding_line %} class="vl last-vl" style="left: 58px; height: calc(100% - 8px);" {% else %} style="left: 58px; height: calc(100% - 17px)" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- end draw line -->
+                          {% if related.get_seding_line or forloop.parentloop.counter < child.get_child_count %}
+                            <div style="left: 38px;" class="vl {% if third_related.get_draw_line %} last_vl_height {% else %} vl_height {% endif %}"></div>
+                            {% endif %}
+                            <!-- first vl -->
+                            {% if contract.get_seding_line or forloop.parentloop.parentloop.parentloop.counter < contract.get_child_count %}
+                            <div class="vl" {% if third_related.get_draw_line or related.get_seding_line  %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                            {% endif %}
+                            <!-- end first vl -->
+
+                          <a href="{% url 'contract-edit' model.id third_related.id %}" class="contract-title">
+                            {{ third_related.title }}
+                          </a>
+                        </td>
+                        <td>{{ third_related.effective_date }}</td>
+                        <td>{{ third_related.next_expiration }}</td>
+                        <td>{{ third_related.renewal_reminder_date }}</td>
+                      </tr>
+                    {% endfor %}
+                  {% endfor %}
+                {% endfor %}
+            {% endfor %}
+            {% for related in contract.get_superseded_by %}
+            <tr class="superseded_by_list">
+                <td style="display: flex;">
+                  <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                  <!-- decide icon -->
+                  {{ related.get_icon }}</i></div>
+                  <!-- end decide icon -->
+                  <!-- draw line -->
+                  {% if related.get_draw_line %}
+                    <div {% if related.get_child_count == 1  and not related.get_seding_line %} class="vl last-vl" style="height: calc(100% - 8px); top: 32px;" {% elif related.get_seding_line and related.get_childs %} style=" height: 100%; top: 32px;" class="vl"{% else %} style=" height: calc(100% - 17px); top: 32px;" class="vl" {% endif %}></div>
+                  {% endif %}
+                  <!-- end draw line -->
+
+                  <a href="{% url 'contract-edit' model.id related.id %}" class="contract-title">
+                    {{ related.title }}
+                  </a>
+                </td>
+                <td>{{ related.effective_date }}</td>
+                <td>{{ related.next_expiration }}</td>
+                <td>{{ related.renewal_reminder_date }}</td>
+              </tr>
+              {% for child in related.get_childs %}
+                <tr>
+                  <td style="display: flex;margin-left: 20px !important;">
+
+                    <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child.get_icon}}</i></div>
+                    {% if forloop.counter > 1 or not forloop.last  %}
+                    <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not related.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px;" {% endif %} style="{% if related.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child.get_line_height}} + 8px);{% else %}height: {{child.get_line_height}}{% endif %}" ></div>
+                    {% endif %}
+                    {% if child.get_draw_line %}
+                      <div {% if child.get_child_count == 1  and not child.get_seding_line %} class="vl last-vl" style="height: calc({{child.get_line_height}} - 8px); left: 38px;" {% else %} style="left: 38px; height: calc({{child.get_line_height}} - 17px)" class="vl" {% endif %}></div>
+                    {% endif %}
+                    <!-- draw first verticle line -->
+                    {% if related.get_seding_line or forloop.counter < related.get_child_count %}
+                    <div class="vl" {% if child.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                    {% endif %}
+                    <!-- end first vl -->
+                    <div class="hl" ></div>
+                    <a href="{% url 'contract-edit' model.id child.id %}" class="contract-title">
+                      {{ child.title }}
+                    </a>
+                  </td>
+                  <td>{{ child.effective_date }}</td>
+                  <td>{{ child.next_expiration }}</td>
+                  <td>{{ child.renewal_reminder_date }}</td>
+                </tr>
+                {% for child_sec in child.get_childs %}
+                  <tr>
+                    <td style="display: flex;margin-left: 40px !important;">
+
+                      <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child_sec.get_icon}}</i></div>
+                      {% if forloop.counter > 1 or not forloop.last  %}
+                      <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px; left: 38px;" {% endif %} style="{% if child.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child_sec.get_line_height}} + 8px);{% else %}height: {{child_sec.get_line_height}}; {% endif %} left: 38px;" ></div>
+                      {% endif %}
+                      {% if child_sec.get_draw_line %}
+                        <div {% if child_sec.get_child_count == 1  and not child_sec.get_seding_line %} class="vl last-vl" style="height: calc({{child_sec.get_line_height}} - 7px); left: 57px;" {% else %} style="left: 57px; height: calc({{child_sec.get_line_height}} - 17px)" class="vl" {% endif %}></div>
+                      {% endif %}
+                      <!-- draw first verticle line -->
+                      {% if related.get_seding_line or forloop.parentloop.counter < related.get_child_count %}
+                      <div class="vl" {% if child_sec.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                      {% endif %}
+                      <!-- end first vl -->
+                      <!-- draw second vl -->
+                      {% if child.get_seding_line or not forloop.last %}
+                      <div class="vl" {% if child_sec.get_draw_line %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                      {% endif %}
+                      <!-- end cecond vl -->
+
+                      <div class="hl" style="left: 38px;"></div>
+                      <a href="{% url 'contract-edit' model.id child_sec.id %}" class="contract-title">
+                        {{ child_sec.title }}
+                      </a>
+                    </td>
+                    <td>{{ child_sec.effective_date }}</td>
+                    <td>{{ child_sec.next_expiration }}</td>
+                    <td>{{ child_sec.renewal_reminder_date }}</td>
+                  </tr>
+                  {% for child_related in child_sec.get_superseded_by %}
+                  <tr class="superseded_by_list">
+                      <td style="display: flex; margin-left: 40px !important;">
+                        <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                        <!-- decide icon -->
+                        {{ child_related.get_icon }}</i></div>
+                        <!-- end decide icon -->
+
+                        <!-- draw line -->
+                        {% if child_related.get_draw_line %}
+                          <div {% if child_related.get_child_count == 1  and not child_related.get_seding_line %} class="vl last-vl" style="left: 58px; height: calc(100% - 7px);" {% else %} style="left: 58px; height: calc(100% - 17px)" class="vl" {% endif %}></div>
+                        {% endif %}
+                        <!-- end draw line -->
+                        <!-- first vl -->
+                        {% if related.get_seding_line or forloop.parentloop.parentloop.counter < related.get_child_count %}
+                        <div class="vl" {% if child_related.get_draw_line or child.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                        {% endif %}
+                        <!-- end first vl -->
+                        {% if child.get_seding_line or not forloop.parentloop.last %}
+                        <div class="vl" {% if child_related.get_draw_line %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                        {% endif %}
+
+                        <a href="{% url 'contract-edit' model.id child_related.id %}" class="contract-title">
+                          {{ child_related.title }}
+                        </a>
+                      </td>
+                      <td>{{ child_related.effective_date }}</td>
+                      <td>{{ child_related.next_expiration }}</td>
+                      <td>{{ child_related.renewal_reminder_date }}</td>
+                    </tr>
+                  {% endfor %}
+                {% endfor %}
+                {% for child_related in child.get_superseded_by %}
+                  <tr class="superseded_by_list">
+                      <td style="display: flex; margin-left: 20px !important;">
+                        <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                        <!-- decide icon -->
+                        {{ child_related.get_icon }}</i></div>
+                        <!-- end decide icon -->
+
+                        <!-- draw line -->
+                        {% if child_related.get_draw_line %}
+                          <div {% if child_related.get_child_count == 1  and not child_related.get_seding_line %} class="vl last-vl" style="left: 38px; height: calc({{child_related.get_line_height}} - 7px);" {% else %} style="left: 38px; height: calc({{child_related.get_line_height}} - 17px)" class="vl" {% endif %}></div>
+                        {% endif %}
+                        <!-- end draw line -->
+                        <!-- first vl -->
+                        {% if related.get_seding_line or forloop.parentloop.counter < related.get_child_count %}
+                        <div class="vl" {% if child_related.get_draw_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                        {% endif %}
+                        <!-- end vl -->
+
+                        <a href="{% url 'contract-edit' model.id child_related.id %}" class="contract-title">
+                          {{ child_related.title }}
+                        </a>
+                      </td>
+                      <td>{{ child_related.effective_date }}</td>
+                      <td>{{ child_related.next_expiration }}</td>
+                      <td>{{ child_related.renewal_reminder_date }}</td>
+                    </tr>
+                    {% for child_third in child_related.get_childs %}
+                      <tr>
+                        <td style="display: flex;margin-left: 40px !important;">
+
+                          <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">{{child_third.get_icon}}</i></div>
+                          {% if forloop.counter > 1 or not forloop.last  %}
+                          <div class="child-vl {% if forloop.last %} last-child-vl {% endif %}" {% if forloop.last and not child_related.get_seding_line %} style="height: 25px; bottom: 0%; top: -1px; left: 38px;" {% endif %} style="{% if child_related.get_seding_line and forloop.last %}   bottom: -8px; height: calc({{child_third.get_line_height}} + 8px);{% else %}height: {{child_third.get_line_height}};{% endif %} left: 38px;" ></div>
+                          {% endif %}
+                          {% if child_third.get_draw_line %}
+                            <div {% if child_third.get_child_count == 1  and not child_third.get_seding_line %} class="vl last-vl" style="height: calc(100% - 7px); left: 58px;" {% else %} style="left: 58px; height: calc(100% - 17px)" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- first vl -->
+                          {% if related.get_seding_line or forloop.parentloop.parentloop.counter < related.get_child_count %}
+                          <div class="vl" {% if child_third.get_draw_line or child_related.get_seding_line %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                          {% endif %}
+                          <!-- end first vl -->
+                          {% if child_related.get_seding_line %}
+                          <div class="vl" {% if child_related.get_draw_line and not forloop.last %} style="height: 100%; left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                          {% endif %}
+
+                          <div class="hl" style="left: 38px;"></div>
+                          <a href="{% url 'contract-edit' model.id child_third.id %}" class="contract-title">
+                            {{ child_third.title }}
+                          </a>
+                        </td>
+                        <td>{{ child_third.effective_date }}</td>
+                        <td>{{ child_third.next_expiration }}</td>
+                        <td>{{ child_third.renewal_reminder_date }}</td>
+                      </tr>
+                      {% for related_third in child_third.get_superseded_by %}
+                      <tr class="superseded_by_list">
+                          <td style="display: flex; margin-left: 40px !important;">
+                            <div class="cross_circle" style=""><i class="material-symbols-outlined cros_icon">
+                            <!-- decide icon -->
+                            {{ related_third.get_icon }}</i></div>
+                            <!-- end decide icon -->
+
+                            <!-- draw line -->
+                          {% if related_third.get_draw_line %}
+                            <div {% if related_third.get_child_count == 1  and not related_third.get_seding_line %} class="vl last-vl" style="left: 58px; height: calc(100% - 7px);" {% else %} style="left: 58px; height: calc(100% - 17px)" class="vl" {% endif %}></div>
+                          {% endif %}
+                          <!-- end draw line -->
+                          {% if child_related.get_seding_line %}
+                            <div class="vl" {% if related_third.get_draw_line %} style="height: calc(100%); left: 38px;" {% else %} style="height: calc(100% - 17px); left: 38px;" {% endif %}></div>
+                            {% endif %}
+                            <!-- first vl -->
+                            {% if related.get_seding_line or forloop.parentloop.parentloop.parentloop.counter < related.get_child_count %}
+                            <div class="vl" {% if related_third.get_draw_line or child_related.get_seding_line  %} style="height: 100%;" {% else %} style="height: calc(100% - 17px);" {% endif %}></div>
+                            {% endif %}
+                            <!-- end first vl -->
+
+                            <a href="{% url 'contract-edit' model.id related_third.id %}" class="contract-title">
+                              {{ related_third.title }}
+                            </a>
+                          </td>
+                          <td>{{ related_third.effective_date }}</td>
+                          <td>{{ related_third.next_expiration }}</td>
+                          <td>{{ related_third.renewal_reminder_date }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+              {% endfor %}
+            {% endfor %}
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no contracts.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row section_view" id="question_section" style="display: none;">
+  <!-- form for import  -->
+  <form method="post" action="{% url 'import-questionnaire' model.id %}" id="import_form" style="display: none;">
+    {% csrf_token %}
+    <input type="text" name="import_list" id="import_list" value="">
+  </form>
+  <!-- endform -->
+  <div class="col-12">
+    <!-- popup question import -->
+      <div class="modal fade" id="questionView" tabindex="-1" role="dialog" aria-labelledby="questionViewTiTLE" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body" style="padding-right: 0px;">
+              <div class="row">
+                <div class="col-md-6 col-12">
+                  
+                </div>
+                <div class="col-md-6 col-12" style="padding: 1rem;">
+                  <div class="input-group no-border justify-content-end">
+                    <input id="survey_search_input" name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                    value="{{ search }}" autocomplete="off" spellcheck="false" />
+                    <button class="btn btn-round btn-white btn-just-icon" onclick="surveySearch()">
+                      <em class="material-icons">search</em>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {% if org_question %}
+              <div >
+                
+              </div>
+              <div class="table-responsive" style="height: 400px; overflow-y: scroll; padding-left: 1rem;">
+                <table class="table table-hover table-sm" id="survey_table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Select</th>
+                      <th scope="col">Questionnaire</th>
+                      <th scope="col">Version</th>
+                      <th scope="col">Last Update</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for survey in org_question %}
+                    <tr>
+                      <td><input type="checkbox" name="checked" class="select_question" onchange="selectQuestion({{survey.id}})" id="survey_{{survey.id}}"></td>
+                      <th scope="row">
+                        <a href="#">
+                          {{ survey.name }}
+                        </a>
+                        <p style="font-weight: 300; font-size: 14px">{{ survey.description }}</p>
+                      </th>
+                      <td>{{survey.org_version}}</td>
+                      <td>{{survey.updated_at}}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="text-center">There are no Questionnaires.</p>
+              {% endif %}
+              <div style="padding: 1rem;">
+                <a type="button" class="btn btn-primary pull-right" onclick="importFormSubmit()" id="question_import_btn" href="#">Import</a>
+                <button type="button" class="btn btn-default pull-right mr-2" data-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!-- end -->
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Questionnaires
+          <a style="text-decoration: none;" data-toggle="modal" data-target="#questionView" class="link_cursor tooltip-parent header_text">
+            <i class="material-icons">add_circle</i><span class="tooltiptext" style="min-width: 160px;">Import Questionnaire</span>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if vendor_survey %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th></th>
+                <th scope="col">Name</th>
+                <th scope="col">Sent</th>
+                <th scope="col">Status</th>
+                <th>Due Date</th>
+                <th scope="col">Sent By</th>
+                <th scope="col">Last Accessed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for survey in vendor_survey %}
+              <tr>
+                <td style="width: 50px">
+                  <a href="#" class="tooltip-parent tooltip-parent2 survey-parent-vendor"><i class="material-symbols-outlined icon_alignment" style="font-size: 19px;">info</i>
+                    {% if survey.gracen_version or survey.org_version %}
+                    <span class="tooltiptext" style="min-width: 160px;">{% if survey.gracen_version %}Gracen Version: {{survey.gracen_version}}{% endif %}{% if survey.org_version %} Org Version: {{survey.org_version}}{% endif %}</span>{% endif %}
+                  </a>
+                </td>
+                <th scope="row">
+                  <a {% if survey.answer %} href="{% url 'djf_surveys:edit' survey.answer.id %}" {% else %} href="{% url 'djf_surveys:create' survey.slug %}" {% endif %}>
+                    {{ survey.name }}
+                  </a>
+                </th>
+                <td>{% if survey.sent_date %}{{survey.sent_date.date}}{% endif %}</td>
+                <td>{% if survey.status == 4 and survey.get_percentage == 100 %} Complete Not Submitted {% else %}
+                    {% if survey.status %}{{survey.get_status_display}} {% if survey.status == 4 %} - {{survey.get_percentage}}%{% endif %}{% endif %}
+                {% endif %}
+                </td>
+                <td>{% if survey.invite_due_date %} {{survey.invite_due_date}} {% endif %}</td>
+                <td>{{survey.sent_by.first_name}} {{survey.sent_by.last_name}}</td>
+                <td>{% if survey.last_activity %}{{survey.last_activity.date}}{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no Questionnaires.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if document_permission %}
+<div class="row section_view" id="document_section" style="display: none;">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Documents
+          {% if edit_doc_permission %}
+          <a style="text-decoration: none;" href="{% url 'documents-create' model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+          {% endif %}
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if documents %}
+
+        <!-- popup document delete -->
+        <div class="modal fade" id="deleteDocument" tabindex="-1" role="dialog" aria-labelledby="deleteDocumentTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-5">
+                <h4 class="pb-5">Are you sure you want delete this Document <b>?</b></h4>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                <a type="button" class="btn btn-primary pull-right" href="" id="document-delete-btn">Yes - Delete</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+
+        <!-- popup document view file -->
+        <div class="modal fade" id="viewDocument" tabindex="-1" role="dialog" aria-labelledby="viewDocumentTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-5">
+                <h4 class="pb-5" style="font-size: 17px;">The document you are trying to retrieve could not be found. If you believe you are receiving this message in error, please report it to your admin.<b></b></h4>
+                <button type="button" class="btn btn-primary pull-right" data-dismiss="modal">Ok</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col">File Name</th>
+                <th scope="col" class="hide_in_mobile_view">Created Date</th>
+                <th scope="col" class="hide_in_mobile_view">Last Update Date</th>
+                <th scope="col" class="hide_in_mobile_view">Linked To</th>
+                <th scope="col"></th>
+                <th scope="col" class="hide_in_mobile_view"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+              <tr>
+                <td scope="row">
+                  <a {% if edit_doc_permission %}href="{% url 'documents-edit' model.id document.id %}"{% else %}href="#"{% endif %}>
+                    {{ document.description }}
+                  </a>
+                </td>
+                <td>
+                    {{ document }}
+                </td>
+                <td class="hide_in_mobile_view">{{ document.created_date }}</td>
+                <td class="hide_in_mobile_view">{% if document.updated_at %}{{ document.updated_date }}{% endif %}</td>
+                <td class="hide_in_mobile_view">
+                  {% if document.contract %}
+                  <a href="{% url 'contract-edit' model.id document.contract.id %}">
+                    {{ document.contract }}
+                  </a>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if document.file_exists %}
+                  <a href="{% url 'documents-view' model.id document.id %}" target="_blank">
+                    View
+                  </a>
+                  {% else %}
+                  <a href="#" data-toggle="modal" data-target="#viewDocument">
+                    View
+                  </a>
+                  {% endif %}
+                </td>
+                {% if edit_doc_permission %}
+                <td class="hide_in_mobile_view">
+                  <a class="redirect_btn tooltip-parent tooltip-parent1" data-toggle="modal" data-target="#deleteDocument"
+                  onclick="deleteDocument('{% url "documents-delete" model.id document.id %}')">
+                    <i class="material-symbols-outlined icon_alignment">delete</i><span class="tooltiptext">Delete Document</span>
+                  </a>
+                {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no documents.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function surveySearch() {
+  // Declare variables
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("survey_search_input");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("survey_table");
+  tr = table.getElementsByTagName("tr");
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 1; i < tr.length; i++) {
+    th = tr[i].getElementsByTagName("th")[0];
+    if (th) {
+      txtValue = th.textContent || th.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+  var survey_list = []
+  function selectQuestion(id){
+    let survey_id = "#survey_"+id
+    let isChecked = $(survey_id)[0].checked
+    if ($(survey_id).is(":checked")){
+      survey_list.push(id)
+    }else{
+      let index = survey_list.indexOf(id);
+      survey_list.splice(index, survey_list.length)
+    }
+  }
+  function importFormSubmit(){
+    $("#import_list").val(survey_list)
+    if(survey_list.length != 0){
+      $("#import_form").submit()
+    }
+  }
+  function showHistory(){
+    var x = document.getElementById("history_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  $(document).on('click', function(e) {
+    var container = $(".history-log");
+    var showBtn = $("#history_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+
+    var container1 = $(".selectMultiple > div");
+    var search = $("#search_ul");
+    if (!$(e.target).closest(container1).length && !$(e.target).closest(search).length) {
+      $(".selectMultiple > div").parent().removeClass('open');
+    }
+});
+function deleteDocument(url) {
+    document.getElementById("document-delete-btn").href = url
+}
+$("#view-edit-vendor").click(function() {
+    $("#vendor-form").show()
+    $("#vendor-information").hide()
+})
+
+function getQueryStrings() {
+    var assoc = {};
+    var decode = function(s) {
+        return decodeURIComponent(s.replace(/\+/g, " "));
+    };
+    var queryString = location.search.substring(1);
+    var keyValues = queryString.split('&');
+
+    for (var i in keyValues) {
+        var key = keyValues[i].split('=');
+        if (key.length > 1) {
+            assoc[decode(key[0])] = decode(key[1]);
+        }
+    }
+    return assoc;
+}
+var qs = getQueryStrings();
+var myParam = qs["section"];
+showSection(myParam)
+$("#contact_section_view").on("click", function() {
+    showSection("CONTACTS")
+})
+$("#task_section_view").on("click", function() {
+    showSection("TASKS")
+})
+$("#contract_section_view").on("click", function() {
+    showSection("CONTRACTS")
+})
+$("#document_section_view").on("click", function() {
+    showSection("DOCUMENTS")
+})
+$("#question_section_view").on("click", function() {
+    showSection("QUESTIONS")
+})
+
+function showSection(section) {
+    $(".section_view_btn").show()
+    $(".header-tile").removeClass("tile-active")
+    $(".section_view").hide()
+    if (section == "CONTACTS") {
+        $("#contact_section_view").hide()
+        $("#contact_tile").addClass("tile-active")
+        $("#contact_section").show()
+    } else if (section == "CONTRACTS") {
+        $("#contract_section_view").hide()
+        $("#contract_tile").addClass("tile-active")
+        $("#contract_section").show()
+    } else if (section == "DOCUMENTS") {
+        $("#document_section_view").hide()
+        $("#document_tile").addClass("tile-active")
+        $("#document_section").show()
+    } else if (section == "QUESTIONS") {
+        $("#question_section_view").hide()
+        $("#question_tile").addClass("tile-active")
+        $("#question_section").show()
+    } else {
+        $("#task_section_view").hide()
+        $("#task_tile").addClass("tile-active")
+        $("#task_section").show()
+    }
+    if (section == "" || section == undefined) {
+        section = "TASKS"
+    }
+    var model_id = "{{model.id}}"
+    if (model_id != "None") {
+        const url = new URL(window.location);
+        url.searchParams.set('section', section);
+        window.history.pushState(null, '', url.toString());
+        var add_url = document.getElementById("additional_details").href
+        const url_add = new URL(add_url);
+        url_add.searchParams.set('section', section);
+        document.getElementById("additional_details").href = url_add.toString()
+        document.getElementById("additional-details").href = url_add.toString()
+    }
+}
+
+  $("#cancel-edit-vendor").click(function(){
+    $("#vendor-form").hide()
+    $("#vendor-information").show()
+  })
+  $(document).ready(function(){
+      var result = '{{ofac_result}}'
+      if (result != "None"){
+        $('#matchedContact').modal('show');
+      }
+    })
+</script>
+<script type="text/javascript">
+
+  new TomSelect("#select-unit",{
+    create: false,
+    sortField: {
+        field: "text",
+        direction: "asc"
+    }
+  });
+  $(document).ready(function() {
+
+    var select = $('select[multiple]');
+    var options = select.find('option');
+
+    var div = $('<div />').addClass('selectMultiple');
+    var active = $('<div />');
+    var list = $('<ul id="search_ul" />');
+    var search_li = ($("<input type='text' onkeyup='searchMultiple()' placeholder='Search....' id='search_input' />")).addClass('search_li');
+    list.append(search_li)
+    options.each(function() {
+        var text = $(this).text();
+        if($(this).is(':selected')) {
+            active.append($('<a />').html('<em>' + text + '</em><i></i>'));
+        } else {
+            list.append($('<li />').html(text));
+        }
+    });
+
+    active.append($('<div />').addClass('arrow'));
+    div.append(active).append(list);
+
+    select.wrap(div);
+
+    $(document).on('click', '.selectMultiple ul li', function(e) {
+        var select = $(this).parent().parent();
+        var li = $(this);
+        if(!select.hasClass('clicked')) {
+            select.addClass('clicked');
+            li.prev().addClass('beforeRemove');
+            li.next().addClass('afterRemove');
+            li.addClass('remove');
+            addRiskType(li.text())
+            var a = $('<a />').addClass('notShown').html('<em>' + li.text() + '</em><i></i>').hide().appendTo(select.children('div'));
+            a.slideDown(400, function() {
+                setTimeout(function() {
+                    var risk_description = $("#edit-div-description").html()
+                    var new_text = "<b>"+ li.text() +" : </b>"
+                    if(risk_description.search(new_text) == -1){
+                      risk_description = risk_description + "&nbsp;<div>"  + new_text + "&nbsp;</div>"
+
+                      $("#edit-div-description").html(risk_description)
+                    }
+                    a.addClass('shown');
+                    select.children('div').children('span').addClass('hide');
+                    select.find('option:contains(' + li.text() + ')').prop('selected', true);
+                }, 500);
+            });
+            setTimeout(function() {
+                if(li.prev().is(':last-child')) {
+                    li.prev().removeClass('beforeRemove');
+                }
+                if(li.next().is(':first-child')) {
+                    li.next().removeClass('afterRemove');
+                }
+                setTimeout(function() {
+                    li.prev().removeClass('beforeRemove');
+                    li.next().removeClass('afterRemove');
+                }, 200);
+
+                li.slideUp(400, function() {
+                    li.remove();
+                    select.removeClass('clicked');
+                });
+            }, 600);
+        }
+    });
+
+    $(document).on('click', '.selectMultiple > div a i', function(e) {
+        var select = $(this).parent().parent().parent();
+        var self = $(this).parent();
+        self.removeClass().addClass('remove');
+        select.addClass('open');
+        removeRiskType(self.children('em').text().trim().split(" ")[0])
+        setTimeout(function() {
+            self.addClass('disappear');
+            setTimeout(function() {
+                self.animate({
+                    width: 0,
+                    height: 0,
+                    padding: 0,
+                    margin: 0
+                }, 300, function() {
+                    var li = $('<li />').text(self.children('em').text().trim().split(" ")[0]).addClass('notShown').appendTo(select.find('ul'));
+                    li.slideDown(400, function() {
+                        li.addClass('show');
+                        setTimeout(function() {
+                            select.find('option:contains(' + self.children('em').text().trim().split(" ")[0] + ')').prop('selected', false);
+                            if(!select.find('option:selected').length) {
+                                select.children('div').children('span').removeClass('hide');
+                            }
+                            li.removeClass();
+                        }, 400);
+                    });
+                    self.remove();
+                })
+            }, 300);
+        }, 400);
+    });
+
+    $(document).on('click', '.selectMultiple > div', function(e) {
+        $(this).parent().toggleClass('open');
+    });
+
+});
+  function searchMultiple(){
+    var input, filter, ul, li, a, i, txtValue;
+    input = document.getElementById('search_input');
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("search_ul");
+    li = ul.getElementsByTagName('li');
+
+    for (i = 0; i < li.length; i++) {
+      txtValue = li[i].textContent || li[i].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        li[i].style.display = "";
+      } else {
+        li[i].style.display = "none";
+      }
+    }
+  }
+  function removeRiskType(val){
+    var risk_type = $("#risk_type").val().trim()
+    val = val.trim()
+    if(risk_type == val){
+      $("#risk_type").val(null)
+    }else{
+      new_val = ", "+val
+      new_val1 = val + ","
+      risk_type = risk_type.replace(new_val, "")
+      risk_type = risk_type.replace(new_val1, "")
+      $("#risk_type").val(risk_type)
+    }
+
+  }
+  function addRiskType(val){
+    var risk_type = $("#risk_type").val().trim()
+    val = val.trim()
+    if (risk_type == ""){
+      $("#risk_type").val(val)
+    }else{
+      $("#risk_type").val(risk_type + ", " + val)
+    }
+  }
+  var risk_val = "{{form.risk_type.value}}"
+  if(risk_type != "" | risk_type != undefined | risk_type != "None" ){
+    risk_val = risk_val.replace(" ", "").trim().split(",")
+    $.each(risk_val, function(i,e){
+        $("#risk_type_select option[value='" + e.trim() + "']").prop("selected", true);
+    });
+
+  }
+  function updateNotes(){
+    $("#description-text").val($("#edit-div-description").html())
+  }
+  new Mentionify(
+      document.getElementById('edit-div-description'),
+      document.getElementById('menu-area'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area",
+      "#edit-div-description",
+      "#description-text",
+      0
+    )
+</script>
+{% endblock javascripts %}

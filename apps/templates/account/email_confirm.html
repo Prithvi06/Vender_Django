@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+
+{% load i18n %}
+{% load account %}
+
+{% block title %}
+  {% trans "Confirm E-mail Address" %}
+{% endblock title %}
+
+{% block content %}
+  <div class="row align-items-center" style="height: calc(100vh - 220px);">
+    <div class="offset-md-3 col-md-5 my-auto registration-modal">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">{% trans "Confirm E-mail Address" %}</h4>
+        </div>
+        <div class="card-body">
+
+          {% if confirmation %}
+
+            {% user_display confirmation.email_address.email as email %}
+
+            <p>
+              {% trans "Please confirm that" %} <a href="mailto:{{ email }}">{{ email }}</a> {% trans "is an e-mail address you want to use." %}
+            </p>
+
+            <form method="post"
+                  action="{% url "account_confirm_email" confirmation.key %}">
+              {% csrf_token %}
+              <div class="text-center">
+                <button class="btn btn-primary" type="submit">{% trans "Confirm" %}</button>
+              </div>
+            </form>
+
+          {% else %}
+
+            {% url 'account_email' as email_url %}
+
+            <p>
+              {% blocktrans %}This e-mail confirmation link expired or is invalid. Please <a href="{{ email_url }}">issue a new e-mail confirmation request</a>.{% endblocktrans %}
+            </p>
+
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}

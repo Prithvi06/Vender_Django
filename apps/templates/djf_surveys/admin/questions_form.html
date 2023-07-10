@@ -1,0 +1,178 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Survey Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .auto-label{
+    top: -1rem !important;
+    font-size: 0.6875rem !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    color: #AAAAAA !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization_pk %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:admin_survey' %}">Questionaires</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}">{{survey}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not object.id %}
+      New Question
+      {% else %}
+      {{ object }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-2 col-12"></div>
+            <div class="col-md-8 col-12">
+               <h5 class="text-center m-4" style="font-weight: bold; font-size: 25px; color: grey;">{% if object.id %}Edit Question{% else %}Add Question{% endif %}</h5>
+               {% if object.id %}
+                <!-- popup -->
+                <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                      <div class="modal-body text-center pt-5">
+                        <h4 class="pb-5">Are you sure you want delete this Question?</h4>
+                        <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                        <a type="button" class="btn btn-primary pull-right" href="{% url 'djf_surveys:admin_delete_question' object.id %}">Yes - Delete</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- end -->
+                {% endif %}
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                  {{error}}
+                </div>
+                {% endif %}
+              <div style="border: 2px solid lightgray; padding: 30px; border-radius: 10px" class="mt-3 mb-3">
+               <div class="form-group bmd-form-group">
+                  <label class="auto-label">Label</label>
+                  <textarea name="label" class="form-control resize-textarea text-div" id="label_text" style="height: 100px; overflow-y: scroll; width: 100%; overflow-x: none;" required>{{object.label}}</textarea>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span class="help-block">Enter your question here.</span>
+                    <span class="help-block"><span id="label_count">100</span> / 500</span>
+                  </div>
+                </div>
+                <div class="form-group bmd-form-group">
+                  <label class="auto-label">Help Text</label>
+                  <textarea maxlength="500" name="help_text" id="help_text" class="form-control resize-textarea text-div" style="height: 100px; overflow-y: scroll; width: 100%; overflow-x: none;">{% if object.help_text %} {{object.help_text}} {% endif %}</textarea>
+                  
+                  <div style="display: flex; justify-content: space-between;">
+                    <span class="help-block">You can add a help text here.</span>
+                    <span class="help-block"><span id="help_count">100</span> / 500</span>
+                  </div>
+                </div>
+                <div class="form-group bmd-form-group is-filled mt-2">
+                  <label class="bmd-label-floating">Type of input field</label>
+                 <!--  <input type="text" name="type_field" value="{{object.type_field}}" class="form-control" required> -->
+                  <select class="form-control" id="id_type_field" name="type_field" required>
+                    <option value="">--------</option>
+                    <option value="0" {% if object.type_field == 0 %} selected {% endif %}>Text</option>
+                    <option value="1" {% if object.type_field == 1 %} selected {% endif %}>Number</option>
+                    <option value="2" {% if object.type_field == 2 %} selected {% endif %}>Radio</option>
+                    <option value="3" {% if object.type_field == 3 %} selected {% endif %}>Select</option>
+                    <option value="4" {% if object.type_field == 4 %} selected {% endif %}>Multi Select</option>
+                    <option value="5" {% if object.type_field == 5 %} selected {% endif %}>Text Area</option>
+                    <option value="6" {% if object.type_field == 6 %} selected {% endif %}>URL</option>
+                    <option value="7" {% if object.type_field == 7 %} selected {% endif %}>Email</option>
+                    <option value="8" {% if object.type_field == 8 %} selected {% endif %}>Date</option>
+                    <option value="9" {% if object.type_field == 9 %} selected {% endif %}>Rating</option>
+                    <option value="10" {% if object.type_field == 10 %} selected {% endif %}>Document</option>
+                    <option value="11" {% if object.type_field == 11 %} selected {% endif %}>Yes-No-N/A</option>
+                  </select>
+                </div>
+                <div class="form-group bmd-form-group is-filled mt-4" id="section_field_id_choices" >
+                  <label class="auto-label">Choices</label>
+                  <textarea name="choices" class="form-control resize-textarea text-div" style="height: 200px; overflow-y: scroll; width: 100%; overflow-x: none;">{{object.choices}}</textarea>
+                  <span class="help-block">If type of field is radio, select, or multi select, fill in the options separated by commas. Ex: Male, Female.</span>
+                </div>
+                <div class="form-group bmd-form-group" style="height: 30px;">
+                  <label class="bmd-label-floating">Required</label>
+                  <input type="checkbox" name="required" class="form-checkboxes" {% if object.required %}checked{% endif %} style="margin-left: 90px !important; float: none;">
+                  <div class="help-block">If True, the user must provide an answer to this question.</div>
+                </div>
+                <div style="clear: both;"></div>
+                <div style="height: 50px; margin-top: 50px;">
+                  <button type="submit" class="btn btn-primary pull-right">
+                    {% if object.id %} Update {% else %} Create {% endif %} Question
+                  </button>
+                  <a type="button" class="btn btn-dark pull-right mr-3" {% if object.id %} href="{% url 'djf_surveys:admin_question_list' survey.id %}" {% else %} href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}" {% endif %}>
+                     Cancel
+                  </a>
+                </div>
+                
+              </div>
+            </div>
+            <div class="col-md-2 col-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  var len = $("#help_text").val().length
+  $("#help_count").text(len)
+  $("#help_text").on("keyup", function(){
+    len = $("#help_text").val().length
+    if (len >= 500) {
+      $("#help_text").val($("#help_text").val().substring(0, 500));
+    }
+    $("#help_count").text($("#help_text").val().length)
+  })
+  var label_len = $("#label_text").val().length
+  $("#label_count").text(label_len)
+  $("#label_text").on("keyup", function(){
+    label_len = $("#label_text").val().length
+    if (label_len >= 500) {
+      $("#label_text").val($("#label_text").val().substring(0, 500));
+    }
+    $("#label_count").text($("#label_text").val().length)
+  })
+    var choicesVal = document.getElementById('id_type_field').value;
+    var elChoice = document.querySelector("#section_field_id_choices");
+
+    toggleChoices(choicesVal);
+
+    document.getElementById('id_type_field').addEventListener('change', function() {
+      console.log('You selected: ', this.value);
+      toggleChoices(this.value);
+    });
+
+    function toggleChoices(value) {
+        if (value == 2 || value == 3 || value == 4) {
+          elChoice.hidden = false;
+      } else if(value == 11) {
+        elChoice.hidden = true;
+        document.querySelector("#section_field_id_choices").getElementsByClassName("text-div")[0].textContent = "Yes,No,N/A"
+      } else {
+          elChoice.hidden = true;
+      }
+    }
+</script>
+{% endblock javascripts %}

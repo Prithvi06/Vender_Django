@@ -1,0 +1,180 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Questionaires {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization_pk %}">Administration</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Questionaires
+    </li>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Library
+          <a style="text-decoration: none;" class="tooltip-parent header_text" href="{% url 'djf_surveys:admin_create_survey' %}">
+            <em class="material-icons">add_circle</em><span class="tooltiptext" style="min-width: 160px;">New Questionnaire</span>
+          </a>
+          <a style="text-decoration: none;" data-toggle="modal" data-target="#questionView" class="link_cursor tooltip-parent header_text">
+            <em class="material-icons">download_for_offline</em><span class="tooltiptext" style="min-width: 160px;">Import Questionnaire</span>
+          </a>
+        </h4>
+      </div>
+      <!-- form for import  -->
+          <form method="post" action="{% url 'djf_surveys:admin_import_questionnaire' %}" id="import_form" style="display: none;">
+            {% csrf_token %}
+            <input type="text" name="import_list" id="import_list" value="">
+          </form>
+          <!-- endform -->
+      <!-- popup question import -->
+          <div class="modal fade" id="questionView" tabindex="-1" role="dialog" aria-labelledby="questionViewTiTLE" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body" style="padding-right: 0px;">
+                  <div class="row">
+                    <div class="col-md-6 col-12">
+                      
+                    </div>
+                    <div class="col-md-6 col-12" style="padding: 1rem;">
+                      <div class="input-group no-border justify-content-end">
+                        <input id="survey_search_input" name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                        value="{{ search }}" autocomplete="off" spellcheck="false" />
+                        <button class="btn btn-round btn-white btn-just-icon" onclick="surveySearch()">
+                          <em class="material-icons">search</em>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {% if org_question %}
+                  <div class="table-responsive" style="height: 400px; overflow-y: scroll; padding-left: 1rem;">
+                    <table class="table table-hover table-sm" id="survey_table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Select</th>
+                          <th scope="col">Questionnaire</th>
+                          <th scope="col">Version</th>
+                          <th scope="col">Last Update</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for survey in org_question %}
+                        <tr>
+                          <td><input type="checkbox" name="checked" class="select_question" onchange="selectQuestion({{survey.id}})" id="survey_{{survey.id}}"></td>
+                          <th scope="row">
+                            <a href="#">
+                              {{ survey.name }}
+                            </a>
+                            <p style="font-weight: 300; font-size: 14px">{{ survey.description }}</p>
+                          </th>
+                          <td>{{ survey.gracen_version }}</td>
+                          <td>{{survey.updated_at}}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <p class="text-center">There are no Questionnaires.</p>
+                  {% endif %}
+                  <div style="padding: 1rem;">
+                    <a type="button" class="btn btn-primary pull-right" onclick="importFormSubmit()" id="question_import_btn" href="#">Import</a>
+                    <button type="button" class="btn btn-default pull-right mr-2" data-dismiss="modal">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <!-- end -->
+      {% if tabledata %}
+      <div class="card-body">
+        <!-- popup -->
+          <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center pt-5">
+                  <h4 class="pb-5">Are you sure you want delete this Questionnaire?</h4>
+                  <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                  <a type="button" class="btn btn-primary pull-right" id="survey-delete-btn">Yes - Delete</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end -->          
+        <form spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="search" type="text" class="form-control col-sm-3" placeholder="Search..."
+              value="{{ request.GET.search }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Libraries.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function deleteSurvey(url){
+    document.getElementById("survey-delete-btn").href = url
+  }
+  function surveySearch() {
+  // Declare variables
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("survey_search_input");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("survey_table");
+  tr = table.getElementsByTagName("tr");
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 1; i < tr.length; i++) {
+    th = tr[i].getElementsByTagName("th")[0];
+    if (th) {
+      txtValue = th.textContent || th.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+  var survey_list = []
+  function selectQuestion(id){
+    let survey_id = "#survey_"+id
+    let isChecked = $(survey_id)[0].checked
+    if ($(survey_id).is(":checked")){
+      survey_list.push(id)
+    }else{
+      let index = survey_list.indexOf(id);
+      survey_list.splice(index, survey_list.length)
+    }
+  }
+  function importFormSubmit(){
+    $("#import_list").val(survey_list)
+    if(survey_list.length != 0){
+      $("#import_form").submit()
+    }
+  }
+</script>
+{% endblock javascripts %}

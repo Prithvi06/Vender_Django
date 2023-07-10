@@ -1,0 +1,169 @@
+{% extends "layouts/base.html" %}
+{% block title %} Dashboard {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .report-btn{
+    width: 100%;
+  }
+  .report{
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+    min-height: 280px;
+    box-shadow: 2px 2px 2px 2px lightgrey;
+  }
+  .report-description{
+    font-size: 12px;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+  }
+  .report-heading{
+    font-size: 14px;
+  }
+  .reports{
+    max-width: 280px;
+    min-width: 250px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Reports
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Generate Reports
+        </h4>
+      </div>
+      <div class="card-body">
+        <h4 class="pb-0 mb-0">Choose a report to generate:</h4>
+        <p style="font-size: 13px;">Report will generate as an Excel file and download to your computer.</p>
+        <div class="row mt-5">
+          <div class="col mb-5 reports">
+
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'critical-third-parties' %}" class="btn btn-primary report-btn">Critical third parties</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  List of third parties marked as critical
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Vendor Name, Relationship Manager, Inherent Risk, Residual Risk, Category, Business Process
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'third-party-directory' %}" class="btn btn-primary report-btn">Third party directory</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  List of all third parties with status and contact information
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Name, Status, Offshore Indicator, Critical Indicator, Category, Relationship Owner, Contact Info
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'task-reports' %}" class="btn btn-primary report-btn">Tasks by owner</a>
+              </div>
+              <div style="">
+                <p class="mt-2 report-heading">
+                  List of all tasks grouped by relationship owner and third party
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Owner, Third Party, Task Name, Created Date, Closed Date, Priority, Status, Resources
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'incidents-reports' %}" class="btn btn-primary report-btn">Incidents by owner</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  List of all incidents grouped by relationship owner and third party
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Name, Resources, Severity, Start Date, End Date, Status
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'expiring-contracts-reports' %}" class="btn btn-primary report-btn">Expiring Contracts</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  List of active contracts expiring in next 180 days
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Third Party, Contract Title, Effective Date, Next Expiration Date, Auto-Renewals, Parent Contract, Relationship Owner 
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'risk-reports' %}" class="btn btn-primary report-btn">Risk Register</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  List of all risks
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> All fields are included. Notes shows the first 512 Characters. 
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col mb-5 reports">
+            <div class="p-3 report">
+              <div class="text-center">
+                <a href="{% url 'renew-contracts-reports' %}" class="btn btn-primary report-btn" style="padding-left: 14px;">Minimums and Auto-renewals</a>
+              </div>
+              <div style="">
+                <p class="mt-2">
+                  Third parties and contracts that have auto-renewals or monthly minimums 
+                </p>
+                <p class="mt-4 report-description">
+                  <b>Fields: </b> Third Party, Contract Title, Status, Contract Expiration Date, Renewal Period, Relationship Owner, Has Minimum, Auto-Renewals. 
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

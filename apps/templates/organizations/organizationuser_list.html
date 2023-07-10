@@ -1,0 +1,152 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Organization Users {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization.id %}">Administration</a></li>
+    <li class="breadcrumb-item">Users</li>  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <!-- popup delete -->
+        <div class="modal fade" id="deleteUser" tabindex="-1" role="dialog" aria-labelledby="deleteUserTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-5">
+                <h4 class="pb-5">Are you sure you want delete this User <b>?</b></h4>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                <a type="button" class="btn btn-primary pull-right" href="" id="user-delete-btn">Yes - Delete</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+    <!-- popup email confirm -->
+        <div class="modal fade" id="emailUser" tabindex="-1" role="dialog" aria-labelledby="emailUserTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-4">
+                <h4 class="pb-3">New Invite Message has been sent to <b id="user_first_name">?</b></h4>
+                <a type="button" class="btn btn-primary text-center" href="#" id="user-email-btn" data-dismiss="modal">Ok</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Organization Users
+          <a style="text-decoration: none;" href="{% url 'org_user_invite' organization.id %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        <form url="{% url 'vendors' %}" style="display: none;" spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="search" type="text" class="form-control col-md-2" placeholder="Search..."
+              value="{{ search }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+
+        <table class="table table-hover table-sm">
+          <caption style="display: none;">Organization Users</caption>
+          <thead>
+            <tr>
+              <th scope="col">Email</th>
+              <th scope="col">Name</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for orguser in object_list %}
+            <tr>
+              <th scope="row">
+                <a href="{% url 'org_user_edit' orguser.organization.id orguser.id %}">
+                  {{ orguser.user.email }}
+                </a>
+              </th>
+              <td>{{ orguser.user.get_full_name }}</td>
+              <td>{% if orguser.is_admin %}Admin{% else %}User{% endif %}</td>
+              <td>
+                {% if orguser.user.is_active %}
+                <div>
+                  <div style="width: 5rem; float: left;">Accepted</div>
+                  <a class="redirect_btn" data-toggle="modal" data-target="#deleteUser" style="float: left;"
+                    title="Remove User From Organization" onclick="deleteUser('{% url "org_user_remove" orguser.organization.id orguser.id %}')">
+                    <em class="material-symbols-outlined icon_alignment redirect_btn">delete</em>
+                  </a>
+                </div>
+                {% else %}
+                <div>
+                  <div style="width: 5rem; float: left;">Pending</div>
+                  <a onclick="deleteUser('{% url "org_user_remove" orguser.organization.id orguser.id %}')" data-toggle="modal" data-target="#deleteUser"
+                    style="width: 2rem; float: left;" title="Remove User From Organization" class="redirect_btn">
+                    <em class="material-symbols-outlined icon_alignment redirect_btn">delete</em>
+                  </a>
+                  {% if orguser.user.first_name %}
+                  <a href="#" onclick="remind_user({{ orguser.organization.id }}, {{orguser.id}}, '{{orguser.user.first_name }}')"
+                    style="width: 2rem; float: left;" title="Send Activation Reminder">
+                    <em class="material-icons">mail</em>
+                  </a>
+                  {% else %}
+                  <a href="#" onclick="remind_user({{ orguser.organization.id }}, {{orguser.id}}, '{{orguser.user.email}}')"
+                    style="width: 2rem; float: left;" title="Send Activation Reminder">
+                    <em class="material-icons">mail</em>
+                  </a>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            No organization users found.
+            {% endfor %}
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function remind_user(org_id, orguser_id, name) {
+    $.ajax(
+    {
+        type:"GET",
+        url: `/organizations/${org_id}/users/${orguser_id}/remind/`,
+        data:{},
+        success: function( data ) 
+        {
+           $("#user_first_name").text(name+".")
+           $("#emailUser").modal('show');
+        }
+     })
+  };
+
+  $(document).ready(function () {
+    // $("#search").val("my search value");
+  });
+  function deleteUser(url){
+    document.getElementById("user-delete-btn").href = url
+  }
+</script>
+{% endblock javascripts %}

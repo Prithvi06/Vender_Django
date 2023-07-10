@@ -1,0 +1,66 @@
+{% extends "layouts/survey_base.html" %}
+{% load render_table from django_tables2 %}
+{% load djf_survey_tags %}
+
+
+{% block title %} Risks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+  .dropzone {
+    display: flex;
+    height: 100px;
+    border: 2px dashed #ccc;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+  }
+
+  .dropzone div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropzone.dragover {
+    border-color: #F26622;
+    color: white;
+    border-width: 5px;
+    background-color: #f2672258;
+    font-weight: bold;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row" style="height:340px; align-items: end;
+    text-align: center;">
+  <div class="col-12">
+    <div class="mb-5" style="font-weight: 400; color:gray;">
+      {% if action_data == 'SAVE' %}
+        <p> Thank you for completing the Questionnaire. Your responses have been submitted to {{organization}} for review.</p>
+      {% elif action_data == 'CONTINUE' %}
+      <p>
+         Your changes have been saved. Please return and complete the questionnaire at some future time.
+      </p>
+      {% elif action_data == 'CANCEL' %}
+      <p>
+         Your changes have been cancelled and no data was saved. Please return and complete the questionnaire at some future time.
+      </p>
+      {% endif %}
+    </div>
+    <div class="notes_btn_height mb-3">
+          <a class="btn btn-primary mr-3" href="{{redirect_url}}" style="color: white;">Return to Questionnarie</a>
+          <a class="btn btn-primary mr-3" href="{% url 'survey-logout' token %}" style="color: white;">Sign Out</a>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

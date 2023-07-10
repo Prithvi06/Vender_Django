@@ -1,0 +1,75 @@
+{% extends "layouts/admin_base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Questionnaires {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'gracen_admin_home' %}">Administration</a></li>
+    <li class="breadcrumb-item">Questionnaires</li>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          <span>Library</span>
+          <a style="text-decoration: none;" href="{% url 'djf_surveys:gracen_admin_create_survey' %}" class="tooltip-parent header_text" >
+            <em class="material-icons">add_circle</em><span class="tooltiptext" style="min-width: 160px;">New Questionnaire</span>
+          </a>
+          <a style="text-decoration: none; background-color: white; vertical-align: middle;" href="{% url 'djf_surveys:gracen_admin_survey_import' %}" class="">
+            <em class="material-symbols-outlined icon_alignment" style="color: #f26622; font-size: 19px; font-weight: bold;">publish</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <!-- popup -->
+          <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center pt-5">
+                  <h4 class="pb-5">Are you sure you want delete this Questionnaire?</h4>
+                  <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                  <a type="button" class="btn btn-primary pull-right" id="survey-delete-btn">Yes - Delete</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end -->
+        <form spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="search" type="text" class="form-control col-sm-3" placeholder="Search..."
+              value="{{ request.GET.search }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Libraries.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function deleteSurvey(url){
+    document.getElementById("survey-delete-btn").href = url
+  }
+</script>
+{% endblock javascripts %}

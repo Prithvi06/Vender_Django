@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Equipment {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Equipment
+          <a style="text-decoration: none;" href="{% url 'equipment-create' %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <h5 style="font-size: 14px;">
+              <i class="material-icons" style="font-size: 16px;">filter_list</i>
+              <span class="pl-2 pr-2">Filter:</span>
+              <select class="filter-select" id="parent-filter" onchange="parentFilter()">
+                <option value="">Select....</option>
+                <option value="type" {% if request.GET.filter_by == "type" %} selected {% endif %}>Type</option>
+                <option value="vendor" {% if request.GET.filter_by == "vendor" %} selected {% endif %}>Vendor</option>
+                
+              </select>
+              <span class="pl-2 pr-2">By:</span>
+              <select class="filter-select parent-select" id="default-filter" {% if request.GET.filter_by and request.GET.filter_by != "" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+              </select>
+              <select class="filter-select parent-select" id="equipment-type-filter" {% if request.GET.filter_by != "type" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% for type in equipment_type %}
+                <option value="{{type}}" {% if request.GET.param == type %} selected {% endif %}>{{type}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" id="equipment-vendor-filter" {% if request.GET.filter_by != "vendor" %} style="display: none;" {% endif %}>
+                <option value="">Select....</option>
+                {% for vendor in vendors %}
+                  <option value="{{vendor}}" {% if request.GET.param == vendor %} selected {% endif %}>{{vendor}}</option>
+                {% endfor %}
+              </select>
+
+              <button type="button" class="btn btn-primary" style="padding: 8px 17px;" onclick="equipmentFilter()">Go</button>
+            </h5>
+          </div>
+          
+        </div>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p>There are no Equipments.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function parentFilter(){
+    var filter_val = $("#parent-filter").val()
+    $(".parent-select").hide()
+    if(filter_val == "type"){
+      $("#equipment-type-filter").show()
+    }else if(filter_val == "vendor"){
+      $("#equipment-vendor-filter").show()
+    }else{
+      $("#default-filter").show()
+    }
+  }
+  function equipmentFilter(){
+    var filter_val = $("#parent-filter").val()
+    var filter_id = ""
+    var filter_by = ""
+    if(filter_val == "type"){
+      filter_id = "#equipment-type-filter"
+      filter_by = "type"
+    }else if(filter_val == "vendor"){
+      filter_id = "#equipment-vendor-filter"
+      filter_by = "vendor"
+    }
+    var val = $(filter_id).val()
+    if (filter_val != "" && val != ""){
+      let url = new URL(window.location)
+      url = url.href.toString().split("?")[0]
+      url = new URL(url)
+      url.searchParams.set("filter_by", filter_by);
+      url.searchParams.set("param", val);
+      window.location.href = url;
+    }
+  }
+</script>
+{% endblock javascripts %}

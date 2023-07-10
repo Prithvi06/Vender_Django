@@ -1,0 +1,172 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Third Party Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .header-tile{
+    height: 130px;
+    box-shadow: 2px 2px 2px 2px lightgrey;
+    background-color: white;
+    border-radius: 10px;
+    min-width: 170px;
+    max-width: 245px;
+    position: relative;
+  }
+  .header-tile>h5{
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .tile-div{
+    display: flex;
+    justify-content: space-between;
+  }
+  .tile-div>div>a{
+    height: 33px;
+    max-width: 80px;
+    padding: 8px;
+    padding-right: 10px;
+    padding-left: 10px;
+    margin-top: 35px;
+  }
+  .tile-ul{
+    list-style-type: none;
+    padding: 0px;
+    font-size: 11px;
+    max-width: 150px;
+
+  }
+  .tile-contact>li{
+    line-height: 1.7;
+  }
+  .tile-icon{
+    position: absolute;
+    margin-top: -15px;
+    background-color: #f26622;
+    color: white;
+    height: 40px;
+    width: 37px;
+    border-radius: 4px;
+    text-align: center;
+
+  }
+  .tile-active{
+    border: 2px solid orange;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Third Party
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-10" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-10">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Third Party</h4>
+          <p class="card-category">Update the vendor profile</p>
+        </div>
+        <div class="card-body">
+          <div class="form-group bmd-form-group">
+            <label class="bmd-label-floating">{{ form.name.label }}</label>
+            {{ form.name }}
+          </div>
+          <div class="form-group bmd-form-group">
+            <label class="bmd-label-floating">{{ form.legal_name.label }}</label>
+            {{ form.legal_name }}
+          </div>
+          <div class="form-group bmd-form-group">
+            <label class="bmd-label-floating">{{ form.tax_id_number.label }}</label>
+            {{ form.tax_id_number }}
+          </div>
+          {{ form.errors.tax_id_number }}
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">{{ form.legal_structure.label }}</label>
+            {{ form.legal_structure }}
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">{{ form.status.label }}</label>
+            {{ form.status }}
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">{{ form.is_offshore.label }}</label>
+            {{ form.is_offshore }}
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">{{ form.critical.label }}</label>
+            {{ form.critical }}
+          </div>
+          <div class="row">
+            <div class="col-md-6 col-12">
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.inherent_risk.label }}</label>
+                {{ form.inherent_risk }}
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.residual_risk.label }}</label>
+                {{ form.residual_risk }}
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 col-12">
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.category.label }}</label>
+                {{ form.category }}
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.org_business_process.label }}</label>
+                {{ form.org_business_process }}
+              </div>
+              {{ form.errors.org_business_process }}
+            </div>
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            {{ form.owner }}
+            <label class="bmd-label-floating">{{ form.owner.label }}</label>
+            {{ form.errors.owner }}
+          </div>
+          {% if model.id %}
+            <a type="button" class="btn btn-dark" href="{% url 'additional-details' model.id %}?section={{section}}">
+             Additional Details
+            </a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Third Party
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

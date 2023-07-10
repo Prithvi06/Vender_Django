@@ -1,0 +1,124 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Tasks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Tasks
+          <a style="text-decoration: none;" href="{% url 'task-create' %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <h5 style="font-size: 14px;">
+              <i class="material-icons" style="font-size: 16px;">filter_list</i>
+              <span class="pl-2 pr-2">Filter:</span>
+              <select class="filter-select" id="parent-filter" onchange="parentFilter()">
+                <option value="">Select....</option>
+                <option value="status" {% if request.GET.filter_by == "status" %} selected {% endif %}>Status</option>
+                <option value="owner" {% if request.GET.filter_by == "owner" %} selected {% endif %}>Owner</option>
+                <option value="date" {% if request.GET.filter_by == "date" %} selected {% endif %}>Date</option>
+              </select>
+              <span class="pl-2 pr-2">By:</span>
+              <select class="filter-select parent-select" id="default-filter" {% if request.GET.filter_by and request.GET.filter_by != "" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+              </select>
+              <select class="filter-select parent-select" {% if request.GET.filter_by != "status" %} style="display: none;"{% endif %} id="task-filter">
+                <option value="">Select....</option>
+                {% for key, value in status.items %}
+                <option value="{{key}}" {% if request.GET.param == key %} selected {% endif %}>{{value}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" {% if request.GET.filter_by != "owner" %} style="display: none;"{% endif %} id="owner-filter">
+                <option value="">Select....</option>
+                {% for task in tasks %}
+                <option value="{{task.owner.id}}" {% if request.GET.param == task.owner.id|slugify %} selected {% endif %}>{{task.owner}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" {% if request.GET.filter_by != "date" %} style="display: none;"{% endif %} id="date-filter">
+                <option value="">Select....</option>
+                <option value="past_due" {% if request.GET.param == "past_due" %} selected {% endif %}>Past Due</option>
+                <option value="due_this_week" {% if request.GET.param == "due_this_week" %} selected {% endif %}>Due This Week</option>
+                <option value="stale" {% if request.GET.param == "stale" %} selected {% endif %}>Stale</option>
+              </select>
+              <button type="button" class="btn btn-primary" style="padding: 8px 17px;" onclick="taskFilter()">Go</button>
+            </h5>
+          </div>
+          <div class="col-md-4 col-12">
+            <form url="{% url 'tasks' %}" spellcheck="false" autocomplete="off">
+              <div class="input-group no-border justify-content-end">
+                <input name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                  value="{{ search }}" />
+                <button class="btn btn-round btn-white btn-just-icon" type="submit">
+                  <em class="material-icons">search</em>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p>There are no Tasks.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function parentFilter(){
+    var filter_val = $("#parent-filter").val()
+    $(".parent-select").hide()
+    if(filter_val == "owner"){
+      $("#owner-filter").show()
+    }else if(filter_val == "date"){
+      $("#date-filter").show()
+    }else if(filter_val == "status"){
+      $("#task-filter").show()
+    }else{
+      $("#default-filter").show()
+    }
+  }
+  function taskFilter(){
+    var filter_val = $("#parent-filter").val()
+    var filter_id = ""
+    var filter_by = ""
+    if(filter_val == "owner"){
+      filter_id = "#owner-filter"
+      filter_by = "owner"
+    }else if(filter_val == "date"){
+      filter_id = "#date-filter"
+      filter_by = "date"
+    }else if(filter_val == "status"){
+      filter_id = "#task-filter"
+      filter_by = "status"
+    }
+    var val = $(filter_id).val()
+    if (filter_val != "" && val != ""){
+      let url = new URL(window.location)
+      url = url.href.toString().split("?")[0]
+      url = new URL(url)
+      url.searchParams.set("filter_by", filter_by);
+      url.searchParams.set("param", val);
+      window.location.href = url;
+    }
+  }
+</script>
+{% endblock javascripts %}

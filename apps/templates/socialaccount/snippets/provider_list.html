@@ -1,0 +1,43 @@
+{% load socialaccount %}
+{% load static %}
+{% load site_providers %}
+
+{% get_providers as socialaccount_providers %}
+
+{% for provider in socialaccount_providers %}
+  {% if not provider_filter or provider.id == provider_filter %}
+    <div class="row" style="margin-bottom: 15px;">
+      <div class="col-md-10 my-auto"
+           style="border-style: solid;
+                  border-color: lightgrey;
+                  border-width: 1px;
+                  border-radius: 5px;
+                  height: 40px;
+                  line-height: 40px">
+        <a title="{{ provider.name }}"
+           class="socialaccount_provider"
+           style="color: black"
+           href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+          <img height="auto"
+               width="auto"
+               alt="{{ provider.name }}"
+               class="pull-left img-{{ provider.id }}"
+               style="margin-left: 20px;
+                      margin-right: 20px;
+                      margin-top: 9px"/>
+          Continue with {{ provider.id|capfirst }}
+        </a>
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+{% block javascripts %}
+  <script>
+    $(document).ready(function() {
+     $(".img-microsoft").attr("src", "{% static 'assets/img/ms-symbollockup_mssymbol_19.png' %}");
+     $(".img-google").css("width", "21px");
+     $(".img-google").attr("src", "{% static 'assets/img/g-logo.png' %}");
+    });
+  </script>
+{% endblock javascripts %}

@@ -1,0 +1,37 @@
+{% extends "admin/change_list.html" %}
+{% block result_list %}
+<div style="border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; padding: 10px; padding-left: 32px; background: #f8f8f8;">
+    <div style="display: none; color: red;" id="error">Please Enter Days</div>
+    <input type="number" name="total_days" style="width: 65%; border-radius: 4px; color: #333;" placeholder="Enter how many old records you want to delete." id="total_days">
+    <button type="button" style="
+        background: #ba2121;
+        border-radius: 4px;
+        padding: 5px 10px;
+        line-height: 15px;
+        color: #fff" onclick="deleteLogger()">Delete</button>
+</div>
+
+{{ block.super }}
+<script src="/static/assets/js/core/jquery.min.js"></script>
+<script type="text/javascript">
+    function deleteLogger(){
+        var days = $("#total_days").val()
+        if(days){
+            var url = "delete-logger?days="+days
+            $.ajax({
+                data: {
+                    "days": days
+                }, // get the form data
+                url: url,
+                method: "GET",
+                // on success
+                success: function (response) {
+                    window.location.reload()
+                },
+            });
+        }else{
+            $("#error").show()
+        }
+    }
+</script>
+{% endblock %}

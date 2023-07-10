@@ -1,0 +1,377 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% load render_table from django_tables2 %}
+{% block title %} Third Parties {% endblock %}
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+
+.create-btn{
+   display: flex;
+   justify-content: space-between;
+}
+
+</style>
+{% endblock stylesheets %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+   <ol class="breadcrumb">
+   <li class="breadcrumb-item"><a href="{% url 'administrator' organization.id %}">Administration</a></li>
+   <li class="breadcrumb-item">Organization Setup</li>
+</nav>
+{% endblock breadcrumb %}
+{% block content %}
+<div class="row">
+   <div class="col-12">
+      <!-- popup delete -->
+      <div class="modal fade" id="deleteBusiness" tabindex="-1" role="dialog" aria-labelledby="deleteBusinessTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              <h4><span id="confirmWarn"></span> <b id="confirmCount"></b><span id="confirmRecord"></span></h4>
+              <h4 id="confirmMessage" class="pb-5"></h4>
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" href="#" id="confirmYes">Yes</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      <div class="card">
+         <div class="card-header card-header-primary">
+            <h4 class="card-title">
+               Organization
+            </h4>
+         </div>
+         <div class="card-body">
+            <div class="row">
+
+               <!-- Popup create unit-->
+               <div class="modal fade" id="createBusiness" tabindex="-1" role="dialog"aria-labelledby="createBusiness" aria-hidden="true">
+                 <div class="modal-dialog modal-dialog-centered" role="document">
+                     <div class="modal-content">
+                        <div class="card-header card-header-primary">
+                           <h4 class="card-title">Create Business Unit</h4>
+                        </div>
+                        <div class="modal-body">
+                           <form method="post" action="{% url 'create-business-unit' organization.id %}" id="create-business-form">
+                              {% csrf_token %}
+                              <div class="form-group bmd-form-group">
+                                 <label class="bmd-label-floating">Unit Name</label>
+                                 <input type="text" name="name" class="form-control" autocomplete="off" id="create-business-input" required tabindex="1">
+                               </div>
+                               <div class="create-btn">
+                                   <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Create Business Unit</button>
+                               </div>
+                           </form>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <!-- PopUp Create Department -->
+               <div class="modal fade" id="createDepartment" tabindex="-1" role="dialog"aria-labelledby="createDepartment" aria-hidden="true">
+                 <div class="modal-dialog modal-dialog-centered" role="document">
+                     <div class="modal-content">
+                        <div class="card-header card-header-primary">
+                           <h4 class="card-title">Create Department</h4>
+                        </div>
+                        <div class="modal-body">
+                           <form method="post" action="{% url 'create-business-department' organization.id %}?unit_id={{sel_unit}}" id="create-department-form">
+                              {% csrf_token %}
+                               <div class="form-group bmd-form-group">
+                                 <label class="bmd-label-floating">Department Name</label>
+                                 <input type="text" name="name" class="form-control" autocomplete="off" id="create-department-input" required>
+                               </div>
+                              <div class="create-btn">
+                                   <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Create Department</button>
+                               </div>
+                           </form>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- PopUp Create Process -->
+               <div class="modal fade" id="createProcess" tabindex="-1" role="dialog"aria-labelledby="createProcess" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                     <div class="modal-content">
+                        <div class="card-header card-header-primary">
+                           <h4 class="card-title">Create Process</h4>
+                        </div>
+                        <div class="modal-body">
+                           <form method="post" action="{% url 'create-business-process' organization.id %}?department_id={{sel_dep}}" id="create-process-form">
+                              {% csrf_token %}
+                               <div class="form-group bmd-form-group">
+                                 <label class="bmd-label-floating">Process Name</label>
+                                 <input type="text" name="name" class="form-control" autocomplete="off" id="create-process-input" required>
+                               </div>
+                              <div class="create-btn">
+                                 <button type="button" class="btn btn-defaul" data-dismiss="modal">Cancel</button>
+                                 <button type="submit" class="btn btn-primary">Create Process</button>
+                              </div>
+                           </form>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div class="col-12 col-md-12 mt-4">
+                  <div class="row">
+                     <div class="col-md-4 col-12" id="business_unit">
+                        <div class="card-header card-header-primary organization-header">
+                           <h4 class="card-title">
+                              Business Unit
+                              <a style="text-decoration: none;" href="#" onclick="createBusiness()">
+                                 <em class="material-icons">add_circle</em>
+                              </a>
+                           </h4>
+                        </div>
+                        <div class="units mt-4">
+                           <ul class="list-group p-3">
+                              {% for unit in business_units %}
+                              <li class="list-group-item p-0">
+                                 <form method="post" action="{% url 'business-unit' organization.id unit.id %}" class="unit-form-{{unit.id}} d-flex justify-content-between" id="unit-form-{{unit.id}}">
+                                    {% csrf_token %}
+                                 <a href="{% if unit %} {% url 'unit_organization_setup' organization.id unit.id %} {% endif %}" id="unit_name_{{unit.id}}" style="color:black;font-size:13px;word-break:break-all;">{% if unit_name == unit.name %} <b style="font-weight:bold;">{{unit.name}}</b> {% else%} {{unit.name}} {% endif %}</a>
+                                 <div class="icon-div" id="unit_div_{{unit.id}}">
+                                    <input type="text" name="name" value="{{unit.name}}" id="unit_input_{{unit.id}}" class="category_name" />
+                                             
+                                    <span id="unit_icon_{{unit.id}}" class="icon-span">
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined cancel-icon" onclick="cancelBusinessTypes('{{unit.id}}', 'unit')">highlight_off</i>
+                                         <span class="tooltiptext" style="left: -270%;">Cancel</span>
+                                       </span>
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined add-icon" onclick="saveBusinessTypes('{{unit.id}}', 'unit', 'save')">check_circle</i>
+                                         <span class="tooltiptext" style="left: -270%;">Save</span>
+                                       </span>
+                                    </span>
+                                 </div>
+                                 <div class="d-flex" id="unit_editicon_{{unit.id}}">
+                                    <span class="tooltip-parent">
+                                       <a id="unit_edit_{{unit.id}}" onclick="edit_business_level('{{unit.id}}', 'unit', '{{unit.name}}')">
+                                       <i class="material-icons edit-icon">border_color</i>
+                                       </a>
+                                       <span class="tooltiptext" style="left: -300%;">Edit</span>
+                                    </span>
+                                    <span class="tooltip-parent">
+                                       <a href="#" class="pl-1 delete_unit" onclick="saveBusinessTypes('{{unit.id}}', 'unit', 'delete')">
+                                          <i class="material-symbols-outlined icon_alignment" style="font-size:20px">delete</i></a>
+                                       <span class="tooltiptext" style="left: -215%;">Delete</span>
+                                     </span>
+                                    <a href="{% url 'business-unit-delete' organization.id unit.id %}" id="unit_delete_{{unit.id}}" hidden></a>
+                                 </div>
+                                 </form>
+                              </li>
+                              {% endfor %}
+                           </ul>
+                        </div>
+                     </div>
+                  
+                     <div class="col-md-4 col-12" id="department">
+                        <div class="card-header card-header-primary organization-header">
+                           <h4 class="card-title">
+                              Department {% if unit_name %} ({{unit_name}}) {% endif %}
+                              <a style="text-decoration:none;" href="#" onclick="createDepartment()">
+                                 <em class="material-icons">add_circle</em>
+                              </a>
+                           </h4>
+                        </div>
+                        <div class="units mt-4">
+                           <ul class="list-group p-3">
+                              {% for department in departments %}
+                              <li class="list-group-item p-0">
+                                 <form method="post" action="{% url 'business-department' organization.id department.id %}" class="department-form-{{department.id}} d-flex justify-content-between" id="department-form-{{department.id}}">
+                                    {% csrf_token %}
+                                 <a href="{% if department.unit %} {% url 'unit_departartment_organization_setup' organization.id department.unit.id department.id %} {% else %}
+                                 {% url 'departartment_organization_setup' organization.id department.id %} {% endif %}" id="department_name_{{department.id}}" style="color: black;font-size:13px;word-break:break-all;">
+                                 {% if department_name == department.name %} <b style="font-weight:bold;">{{department.name}}</b> {% else%} {{department.name}} {% endif %}</a>
+                                 <div class="icon-div" id="department_div_{{department.id}}">
+                                    <input type="text" name="name" value="{{department.name}}" id="department_input_{{department.id}}" class="category_name" />
+                                    
+                                    <span id="department_icon_{{department.id}}" class="icon-span">
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined cancel-icon" onclick="cancelBusinessTypes('{{department.id}}', 'department')">highlight_off</i>
+                                         <span class="tooltiptext" style="left: -270%;">Cancel</span>
+                                       </span>
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined add-icon" onclick="saveBusinessTypes('{{department.id}}', 'department', 'save')">check_circle</i>
+                                         <span class="tooltiptext" style="left: -270%;">Save</span>
+                                       </span>
+                                    </span>
+                                 </div>
+                                 <div class="d-flex" id="department_editicon_{{department.id}}">
+                                    <span class="tooltip-parent">
+                                       <a class="edit-department" id="department_edit_{{department.id}}" onclick="edit_business_level('{{department.id}}', 'department', '{{department.name}}')"> <i class="material-icons edit-icon">border_color</i></a>
+                                        <span class="tooltiptext" style="left: -300%;">Edit</span>
+                                    </span>
+                                    
+                                    <span class="tooltip-parent">
+                                       <a href="#" class="pl-1 delete_department" onclick="saveBusinessTypes('{{department.id}}', 'department', 'delete')" ><i class="material-symbols-outlined icon_alignment" style="font-size:20px">delete</i></a>
+                                       <span class="tooltiptext" style="left: -215%;">Delete</span>
+                                    </span>
+                                    <a href="{% url 'business-department-delete' organization.id department.id %}" id="department_delete_{{department.id}}" hidden></a>
+                                 </div>
+                                 </form>
+                              </li>
+                              {% endfor %}
+                           </ul>
+                        </div>
+                     </div>
+   
+                     <div class="col-md-4 col-12" id="process">
+                        <div class="card-header card-header-primary organization-header">
+                           <h4 class="card-title">
+                              Process {% if department_name %} ({{department_name}}) {% endif %}
+                              <a style="text-decoration:none;" href="#" onclick="createProcess()">
+                                 <em class="material-icons">add_circle</em>
+                              </a>
+                           </h4>
+                        </div>
+                        <div class="units mt-4">
+                           <ul class="list-group p-3">
+                              {% for process in processes %}
+                              <li class="list-group-item p-0">
+                                 <form method="post" action="{% url 'business-process' organization.id process.id %}" class="process-form-{{process.id}} d-flex justify-content-between" id="process-form-{{process.id}}">
+                                    {% csrf_token %}
+                                 <span id="process_name_{{process.id}}" style="font-size:13px;word-break:break-all;">{{process.name}}</span>
+                                 <div class="icon-div" id="process_div_{{process.id}}">
+                                    <input type="text" name="name" value="{{process.name}}" id="process_input_{{process.id}}"class="category_name" />
+                                    
+                                    <span id="process_icon_{{process.id}}" class="icon-span">
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined cancel-icon" onclick="cancelBusinessTypes('{{process.id}}', 'process')">highlight_off</i>
+                                         <span class="tooltiptext" style="left: -270%;">Cancel</span>
+                                       </span>
+                                       <span class="tooltip-parent">
+                                         <i class="material-symbols-outlined add-icon" onclick="saveBusinessTypes('{{process.id}}', 'process', 'save')">check_circle</i>
+                                         <span class="tooltiptext" style="left: -270%;">Save</span>
+                                       </span>
+                                    </span>
+                                 </div>
+                                 <div class="d-flex" id="process_editicon_{{process.id}}">
+                                    <span class="tooltip-parent">
+                                        <a class="edit-process" id="process_edit_{{process.id}}" onclick="edit_business_level('{{process.id}}', 'process', '{{process.name}}')"><i class="material-icons edit-icon" >border_color</i></a>
+                                        <span class="tooltiptext" style="left: -300%;">Edit</span>
+                                     </span>
+                                   
+                                    <span class="tooltip-parent">
+                                       <a href="#" class="pl-1 delete_process" onclick="saveBusinessTypes('{{process.id}}', 'process', 'delete')"><i class="material-symbols-outlined icon_alignment" style="font-size:20px">delete</i></a>
+                                       <span class="tooltiptext" style="left: -215%;">Delete</span>
+                                    </span>
+                                    <a href="{% url 'business-process-delete' organization.id process.id %}" id="process_delete_{{process.id}}" hidden></a>
+                                 </div>
+                                 </form>
+                              </li>
+                              {% endfor %}
+                           </ul>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+
+   function createBusiness() {
+      $("#create-business-input").val("")
+      setTimeout(function(){ $('#create-business-input'). focus (); }, 500);
+      $("#createBusiness").modal('show');
+   }
+
+   function createDepartment() {
+      $("#create-department-input").val("")
+      setTimeout(function(){ $('#create-department-input'). focus (); }, 500);
+      $("#createDepartment").modal('show');
+   }
+   function createProcess() {
+      $("#create-process-input").val("")
+      setTimeout(function(){ $('#create-process-input'). focus (); }, 500);
+      $("#createProcess").modal('show');
+   }
+
+   function levelSelector(){
+      document.getElementById("business_type").submit()
+   }
+
+   function saveBusinessTypes(id, type, action) {
+      $("#deleteBusiness").modal('show');
+      if(type == 'category'){
+         const url = '/organizations/'+ '{{organization_pk}}' + '/category/' + id
+         $.ajax({
+            url: url,
+            type: "GET",
+            success: function (data) {
+              console.log(data)
+              total = data['count']
+              console.log(total)
+              $('#confirmCount').text(total+' ')
+            }
+          })
+      }
+      if(action == 'delete'){
+         $("#confirmWarn").text('Deleting this value will change it on ')
+         $("#confirmRecord").text(type + ' records.')
+         $("#confirmMessage").text('Are you sure you want make this change?')
+         $("#confirmYes").text('Yes - Delete')
+      }
+      if(action == 'save'){
+         $("#confirmWarn").text('Changing this value will change it on ')
+         $("#confirmRecord").text(type + ' records.')
+         $("#confirmMessage").text('Are you sure you want make this change?')
+         $("#confirmYes").text('Yes - Change')
+      }
+      document.getElementById('confirmYes').setAttribute('onclick',`BusinessClick('${action}', '${type}', '${id}')`)
+   }
+
+   function BusinessClick(action, type, id){
+      console.log('click')
+      if(action == 'save'){
+         const form_id = type + "-form-"+id
+        document.getElementById(form_id).submit()
+      }
+      if(action == 'delete'){
+         const delete_id = type + "_delete_" + id
+         document.getElementById(delete_id).click()
+      }
+   }
+
+   function edit_business_level(id, type, value){
+      const input_id = type + "_input_" + id
+      const span_id = type + "_name_" + id
+      const edit = type + "_edit_" + id
+      const span_icon_id = type + "_icon_" + id
+      const span_editicon_id = type + "_editicon_" + id
+      const div_id = type + "_div_" + id
+      document.getElementById(div_id).style.width = "85%"
+      document.getElementById(span_editicon_id).style.setProperty("display", "none", "important");
+      document.getElementById(span_icon_id).style.display = "block";
+      document.getElementById(span_id).style.display = "none";
+      document.getElementById(edit).style.display = "none";
+      document.getElementById(input_id).value = value;
+      document.getElementById(input_id).style.display = "block";
+   }
+   function cancelBusinessTypes(id, type){
+      const input_id = type + "_input_" + id
+      const span_id = type + "_name_" + id
+      const edit = type + "_edit_" + id
+      const span_icon_id = type + "_icon_" + id
+      const span_editicon_id = type + "_editicon_" + id
+      const div_id = type + "_div_" + id
+      document.getElementById(div_id).style.width = "0"
+      document.getElementById(span_editicon_id).style.setProperty("display", "flex", "important");
+      document.getElementById(span_icon_id).style.display = "none";
+      document.getElementById(span_id).style.display = "block";
+      document.getElementById(edit).style.display = "block";
+      document.getElementById(input_id).style.display = "none";
+   }
+</script>
+{% endblock javascripts %}

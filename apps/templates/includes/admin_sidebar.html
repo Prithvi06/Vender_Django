@@ -1,0 +1,44 @@
+{% load org_tags %}
+<style type="text/css">
+  .sidebar .logo .simple-text {
+    display: inline-block;
+    font-size: 18px;
+    color: #3C4858;
+    white-space: nowrap;
+    font-weight: 400;
+    line-height: 30px;
+    overflow: hidden;
+    text-align: center;
+     display: block; 
+}
+</style>
+<div class="sidebar" data-color="purple" data-background-color="gray" style="background-color: #dfdcdc;">
+  <div class="logo">
+    <div class="simple-text logo-normal">
+      <img src="/static/assets/img/favicon.png" alttext="GRaCen" style="width: 13%; margin-right: 10px;">
+      <span style="font-size: 16px;
+    text-transform: none;
+    font-weight: 300;">System Administration</span>
+    </div>
+  </div>
+  <div class="sidebar-wrapper">
+    <ul class="nav">
+      {% if request.user.is_authenticated %}
+      <li class="nav-item {% if 'dashboard' in segment %} side_active {% endif %}">
+        <a class="nav-link" href="{% url 'gracen_admin_home' %}">
+          <i class="material-icons">dashboard</i>
+          <p>Dashboard</p>
+        </a>
+      </li>
+
+      <li class="nav-item {% if 'questionnaire' in segment %} side_active {% endif %}">
+        <a class="nav-link" href="{% url 'djf_surveys:gracen_admin_survey' %}">
+          <i class="material-icons">dynamic_form</i>
+          <p>Questionnaires</p>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+
+</div>

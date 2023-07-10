@@ -1,0 +1,119 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Locations {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization.id %}">Administration</a></li>
+    <li class="breadcrumb-item">Locations</li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Locations
+          <a style="text-decoration: none;" href="{% url 'location-create' organization.id %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <h5 style="font-size: 14px;">
+              <i class="material-icons" style="font-size: 16px;">filter_list</i>
+              <span class="pl-2 pr-2">Filter:</span>
+              <select class="filter-select" id="parent-filter" onchange="parentFilter()">
+                <option value="">Select....</option>
+                <option value="city" {% if request.GET.filter_by == "city" %} selected {% endif %}>City</option>
+                <option value="type" {% if request.GET.filter_by == "type" %} selected {% endif %}>Type</option>
+              </select>
+              <span class="pl-2 pr-2">By:</span>
+              <select class="filter-select parent-select" id="default-filter" {% if request.GET.filter_by and request.GET.filter_by != "" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+              </select>
+              <select class="filter-select parent-select" {% if request.GET.filter_by != "city" %} style="display: none;"{% endif %} id="city-filter">
+                <option value="">Select....</option>
+                {% for value in city %}
+                <option value="{{value}}" {% if request.GET.param == value %} selected {% endif %}>{{value}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" {% if request.GET.filter_by != "type" %} style="display: none;"{% endif %} id="type-filter">
+                <option value="">Select....</option>
+                {% for type in location_type %}
+                <option value="{{type}}" {% if request.GET.param == type %} selected {% endif %}>{{type}}</option>
+                {% endfor %}
+              </select>
+              <button type="button" class="btn btn-primary" style="padding: 8px 17px;" onclick="taskFilter()">Go</button>
+            </h5>
+          </div>
+          <div class="col-md-4 col-12">
+            <form url="{% url 'locations' organization.id %}" spellcheck="false" autocomplete="off">
+              <div class="input-group no-border justify-content-end">
+                <input name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                  value="{{ search }}" />
+                <button class="btn btn-round btn-white btn-just-icon" type="submit">
+                  <em class="material-icons">search</em>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p>There are no Tasks.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function parentFilter(){
+    var filter_val = $("#parent-filter").val()
+    $(".parent-select").hide()
+    if(filter_val == "type"){
+      $("#type-filter").show()
+    }else if(filter_val == "city"){
+      $("#city-filter").show()
+    }else{
+      $("#default-filter").show()
+    }
+  }
+  function taskFilter(){
+    var filter_val = $("#parent-filter").val()
+    var filter_id = ""
+    var filter_by = ""
+    if(filter_val == "type"){
+      filter_id = "#type-filter"
+      filter_by = "type"
+    }else if(filter_val == "city"){
+      filter_id = "#city-filter"
+      filter_by = "city"
+    }
+    var val = $(filter_id).val()
+    if (filter_val != "" && val != ""){
+      let url = new URL(window.location)
+      url = url.href.toString().split("?")[0]
+      url = new URL(url)
+      url.searchParams.set("filter_by", filter_by);
+      url.searchParams.set("param", val);
+      window.location.href = url;
+    }
+  }
+</script>
+{% endblock javascripts %}

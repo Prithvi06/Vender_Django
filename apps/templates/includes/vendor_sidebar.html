@@ -1,0 +1,22 @@
+{% load org_tags %}
+<div class="sidebar" data-color="purple" data-background-color="gray">
+  <div class="logo">
+    <div class="simple-text logo-normal">
+      <img src="/static/assets/img/logo.png" alttext="GRaCen" style="width: 80%">
+    </div>
+  </div>
+  <div class="sidebar-wrapper">
+    <ul class="nav">
+      {% if request.user.is_authenticated %}
+
+      <li class="nav-item {% if 'questionnaire' in segment %} side_active {% endif %}">
+        <a class="nav-link" href="{% url 'vendor_surveys' vendor.id %}">
+          <i class="material-icons">dynamic_form</i>
+          <p>Questionnaires</p>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+
+</div>

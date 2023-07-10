@@ -1,0 +1,180 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Third Parties {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .vendor-tile{
+    padding: 2px;
+    min-width: 39px;
+    background-color: white;
+    border: 1px solid #c5c5c5;
+    text-align: left;
+    color: #ababab !important;
+  }
+  .vendor-tile:hover{
+    color: white !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Third Parties
+          <a style="text-decoration: none;" href="{% url 'vendor-create' %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      {% if tabledata %}
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <h5 style="font-size: 14px;">
+              <i class="material-icons" style="font-size: 16px;">filter_list</i>
+              <span class="pl-2 pr-2">Filter:</span>
+              <select class="filter-select" id="parent-filter" onchange="parentFilter()">
+                <option value="">Select....</option>
+                <option value="status" {% if request.GET.filter_by == "status" %} selected {% endif %}>Status</option>
+                <option value="residual_risk" {% if request.GET.filter_by == "risk" %} selected {% endif %}>Residual Risk</option>
+                <option value="category" {% if request.GET.filter_by == "category" %} selected {% endif %}>Category</option>
+                <option value="contract_activity" {% if request.GET.filter_by == "contract" %} selected {% endif %}>Contract Activity</option>
+                <option value="owner" {% if request.GET.filter_by == "owner" %} selected {% endif %}>Relationship Owner</option>
+              </select>
+              <span class="pl-2 pr-2">By:</span>
+              <select class="filter-select parent-select" id="default-filter" {% if request.GET.filter_by and request.GET.filter_by != "" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+              </select>
+              <select class="filter-select parent-select" id="vendor-status-filter" {% if request.GET.filter_by != "status" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% for key, value in status.items %}
+                <option value="{{value}}" {% if request.GET.param == value %} selected {% endif %}>{{value}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" id="vendor-category-filter" {% if request.GET.filter_by != "category" %} style="display: none;" {% endif %}>
+                <option value="">Select....</option>
+                {% for catg in category %}
+                  <option value="{{catg}}" {% if request.GET.param == catg %} selected {% endif %}>{{catg}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" id="vendor-risk-filter" {% if request.GET.filter_by != "risk" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% for key, value in residual_risk.items %}
+                <option value="{{key}}" {% if request.GET.param == key %} selected {% endif %}>{{value}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" id="vendor-owner-filter" {% if request.GET.filter_by != "owner" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% for vendor in vendors %}
+                <option value="{{vendor.owner.id}}" {% if request.GET.param == vendor.owner.id|slugify%} selected {% endif %}>{{vendor.owner.first_name}} {{vendor.owner.last_name}}</option>
+                {% endfor %}
+              </select>
+              <select class="filter-select parent-select" id="vendor-contract-filter" {% if request.GET.filter_by != "contract" %} style="display: none;"{% endif %}>
+                <option value="">Select....</option>
+                {% if contract_activity.next_30 != 0 %}
+                <option value="next_30_contract" {% if request.GET.param == "next_30_contract" %} selected {% endif %}>Ending Next 30 Days</option>
+                {% endif %}
+                {% if contract_activity.next_60 != 0 %}
+                <option value="next_60_contract" {% if request.GET.param == "next_60_contract" %} selected {% endif %}>Ending Next 31-60 Days</option>
+                {% endif %}
+                {% if contract_activity.next_90 != 0 %}
+                <option value="next_90_contract" {% if request.GET.param == "next_90_contract" %} selected {% endif %}>Ending Next 61-90 Days</option>
+                {% endif %}
+                {% if contract_activity.last_30 != 0 %}
+                <option value="last_30_contract" {% if request.GET.param == "last_30_contract" %} selected {% endif %}>Expired Last 30 Days</option>
+                {% endif %}
+                {% if contract_activity.renewals != 0 %}
+                <option value="renewals_contract" {% if request.GET.param == "renewals_contract" %} selected {% endif %}>Auto Renewed Last 30 Days</option>
+                {% endif %}
+                {% if has_minimums %}
+                <option value="has_minimums" {% if request.GET.param == "has_minimums" %} selected {% endif %}>Has Minimums</option>
+                {% endif %}
+                {% if auto_renews %}
+                <option value="auto_renews" {% if request.GET.param == "auto_renews" %} selected {% endif %}>Auto Renews</option>
+                {% endif %}
+              </select>
+              <button type="button" class="btn btn-primary" style="padding: 8px 17px;" onclick="vendorFilter()">Go</button>
+            </h5>
+          </div>
+          <div class="col-md-4 col-12">
+            <form url="{% url 'vendors' %}" spellcheck="false" autocomplete="off">
+              <div class="input-group no-border justify-content-end">
+                <input name="search" type="text" class="form-control col-md-7" placeholder="Search..."
+                  value="{{ search }}" />
+                <button class="btn btn-round btn-white btn-just-icon" type="submit">
+                  <em class="material-icons">search</em>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="table-responsive">
+          {% render_table tabledata 'table/custome_table.html' %}
+        </div>
+      </div>
+      {% else %}
+      <p>There are no vendors.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function parentFilter(){
+    var filter_val = $("#parent-filter").val()
+    $(".parent-select").hide()
+    if(filter_val == "contract_activity"){
+      $("#vendor-contract-filter").show()
+    }else if(filter_val == "residual_risk"){
+      $("#vendor-risk-filter").show()
+    }else if(filter_val == "category"){
+      $("#vendor-category-filter").show()
+    }else if(filter_val == "owner"){
+      $("#vendor-owner-filter").show()
+    }else if(filter_val == "status"){
+      $("#vendor-status-filter").show()
+    }else{
+      $("#default-filter").show()
+    }
+  }
+  function vendorFilter(){
+    var filter_val = $("#parent-filter").val()
+    var filter_id = ""
+    var filter_by = ""
+    if(filter_val == "contract_activity"){
+      filter_id = "#vendor-contract-filter"
+      filter_by = "contract"
+    }else if(filter_val == "residual_risk"){
+      filter_id = "#vendor-risk-filter"
+      filter_by = "risk"
+    }else if(filter_val == "category"){
+      filter_id = "#vendor-category-filter"
+      filter_by = "category"
+    }else if(filter_val == "status"){
+      filter_id = "#vendor-status-filter"
+      filter_by = "status"
+    }else if(filter_val == "owner"){
+      filter_id = "#vendor-owner-filter"
+      filter_by = "owner"
+    }
+    var val = $(filter_id).val()
+    if (filter_val != "" && val != ""){
+      let url = new URL(window.location)
+      url = url.href.toString().split("?")[0]
+      url = new URL(url)
+      url.searchParams.set("filter_by", filter_by);
+      url.searchParams.set("param", val);
+      window.location.href = url;
+    }
+  }
+</script>
+{% endblock javascripts %}

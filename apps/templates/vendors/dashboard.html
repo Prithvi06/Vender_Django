@@ -1,0 +1,568 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Dashboard {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+{{ block_super }}
+<style>
+  .chart-container {
+    border: 5px solid whitesmoke;
+    border-radius: 20px;
+    margin: 10px;
+    padding: 10px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .activity-header {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 1em;
+    font-size: 18px;
+    opacity: 0.85;
+    font-family: Source Sans Pro;
+  }
+  .reisk{
+    height: 400px;
+  }
+  path{
+    cursor: pointer;
+  }
+  .no_data_chart{
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    padding-top: 100px;
+    font-size: 11px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Dashboard
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 col-12">
+            <a href="{% url 'reports' %}" class="btn btn-primary ml-0">Generate Reports</a>
+
+            <button class="btn btn-primary ml-0" onclick="showCalendar()" id="calendar_btn" {% if request.GET.section == "DASHBORD" or not request.GET.section  %} style="display: inline;" {% else %} style="display: none;" {% endif %}>Task Calendar</button>
+
+            <button class="btn btn-primary ml-0" onclick="showDashBoard()" id="dashboard_btn" {% if request.GET.section == "CALENDAR"%} style="display: inline;" {% else %} style="display: none;" {% endif %}>DashBoard</button>
+
+          </div>
+          {% if request.GET.section == "DASHBOARD" or not request.GET.section %}
+          <div class="col-md-6 col-12" id="filters">
+            <div class="d-flex pull-right">
+              <a href="#" class="pr-4">Filter Dashboard:</a>
+              <form class="d-flex" id="filter-form">
+                <div class="form-check">
+                 <input type="radio" name="search" id="filter-all" class="search" value="all" {% if search != "mine" %} checked {% endif %}>
+                  <label for="filter-all" class="pr-4" style="color: #f26622;">
+                    Show All
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" name="search" id="filter-mine" class="search" value="mine" {% if search == "mine" %} checked {% endif %}>
+                  <label for="mine" style="color: #f26622;">
+                    Show Mine
+                  </label>
+                </div>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="row" id="charts" {% if request.GET.section == "DASHBOARD" or not request.GET.section %} style="display: flex;" {% else %} style="display: none;" {% endif %}>
+          {% if render_relationships_chart == True %}
+            <div class="chart-container charts-fusion" id="relationships-chart">
+             {{ relationships_chart|safe }}
+            </div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Third Parties by Status</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+         <div class="chart-container charts-fusion">
+            <h3 class="activity-header">Contract Activity</h3>
+            <h5><a {% if contract_activity.next_30 != 0 %} href="{% url 'vendors' %}?filter_by=contract&param=next_30_contract{% if request.GET.search == 'mine' %}&self=True{% endif %}{% else %}href="#"{% endif %}">{{ contract_activity.next_30 }} contracts ending in the next 30 days</a></h5>
+            <h5><a {% if contract_activity.next_60 != 0 %} href="{% url 'vendors' %}?filter_by=contract&param=next_60_contract{% if request.GET.search == 'mine' %}&self=True{% endif %}{% else %}href="#"{% endif %}">{{ contract_activity.next_60 }} contracts ending in 31 - 60 days</a></h5>
+            <h5><a {% if contract_activity.next_90 != 0 %} href="{% url 'vendors' %}?filter_by=contract&param=next_90_contract{% if request.GET.search == 'mine' %}&self=True{% endif %}{% else %}href="#"{% endif %}">{{ contract_activity.next_90 }} contract ending in 61 - 90 days</a></h5>
+            <h5><a {% if contract_activity.last_30 != 0 %} href="{% url 'vendors' %}?filter_by=contract&param=last_30_contract{% if request.GET.search == 'mine' %}&self=True{% endif %}{% else %}href="#"{% endif %}">{{ contract_activity.last_30 }} contracts expired in the last 30 days</a></h5>
+            <h5><a {% if contract_activity.renewals != 0 %} href="{% url 'vendors' %}?filter_by=contract&param=renewals_contract{% if request.GET.search == 'mine' %}&self=True{% endif %}{% else %}href="#"{% endif %}">{{ contract_activity.renewals }} contracts auto-renewed in the last 30 days</a></h5>
+          </div>
+          {% if render_risk_chart == True %}
+            <div class="chart-container charts-fusion" id="risk-chart">{{ risk_chart|safe }}</div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Third Parties by Residual Risk</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+
+          {% if render_category_chart == True %}
+            <div class="chart-container charts-fusion" id="top-categories-chart">{{ top_categories_chart|safe }}</div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Top Third Party Categories</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+
+          {% if render_incident_chart == True %}
+            <div class="chart-container charts-fusion" id="incident-chart">{{ incident_chart|safe }}</div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Incidents by Status</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+
+          {% if render_risk_items_chart == True %}
+            <div class="chart-container charts-fusion" id="risk-items-chart">{{ risk_items_chart|safe }}</div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Risk Items by Score</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+
+          <div class="chart-container charts-fusion reisk" id="chart-risk-rating" ></div>
+
+          {% if render_task_chart == True %}
+            <div class="chart-container charts-fusion" id="task-chart">{{ task_chart|safe }}</div>
+          {% else %}
+            <div class="chart-container charts-fusion" style="height: 380px;">
+                <h3 class="activity-header">Tasks By Status</h3>
+                <div class="no_data_chart">
+                    No data to display
+                </div>
+            </div>
+          {% endif %}
+        </div>
+
+
+        <div class="row" id="calendar_div" {% if request.GET.section == "CALENDAR" %} style="display: block;" {% else %} style="display: none;" {% endif %}>
+            <div class="col-12">
+                <div id='calendar' class="big_screen_calendar"></div>
+                <div id="mobile-calendar" class="mobile_calendar"></div>
+            </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  $(document).ready(function () {
+  $('#filter-mine').click(function() {
+      $("#filter-form").submit()
+  });
+  $('#filter-all').click(function() {
+      $("#filter-form").submit()
+  });
+  var key = "{{request.GET.section}}"
+    if(key == "CALENDAR"){
+        showCalendar()
+    }else if(key == "DASHBOARD"){
+        showDashBoard()
+    }
+    });
+
+risk_data = {{risk_rating | safe}}
+data = []
+for (i = 1; i <= 5; i++) {
+    for (j = 1; j <= 5; j++) {
+        var risk_value = " "
+        var display = "High(" + i * j + ")"
+        var label = "High"
+        if (i * j <= 5) {
+            display = "Low(" + i * j + ")"
+            label = "Low"
+        } else if (i * j > 5 && i * j < 12) {
+            display = "Medium(" + i * j + ")"
+            label = "Medium"
+        }
+        for (k = 0; k < risk_data.length; k++) {
+            if (risk_data[k]["impact"] == i && risk_data[k]["likelihood"] == j) {
+                if (risk_data[k]["rating"] == i * j) {
+                    risk_value = ((risk_data[k]["total_rating"])).toString()
+                    break;
+                }
+            }
+        }
+        data.push({
+            rowid: i.toString(),
+            columnid: j.toString(),
+            value: i * j,
+            displayvalue: risk_value,
+            trlabel: display,
+            tllabel: label
+        })
+    }
+}
+const dataSource = {
+    chart: {
+        caption: "Risk Item Distribution",
+        xaxisname: "Likelihood",
+        yaxisname: "Severity",
+        theme: "fusion",
+        showlabels: "1",
+        showvalues: "1",
+        xaxisposition: "top",
+        plottooltext: "<b>Rating : $trLabel</b>{br}"
+    },
+    "rows": {
+        "row": [{
+                "id": "1",
+                "label": "1"
+            },
+            {
+                "id": "2",
+                "label": "2"
+            },
+            {
+                "id": "3",
+                "label": "3"
+            },
+            {
+                "id": "4",
+                "label": "4"
+            },
+            {
+                "id": "5",
+                "label": "5"
+            },
+        ]
+    },
+    "columns": {
+        "column": [{
+                "id": "1",
+                "label": "1"
+            },
+            {
+                "id": "2",
+                "label": "2"
+            },
+            {
+                "id": "3",
+                "label": "3"
+            },
+            {
+                "id": "4",
+                "label": "4"
+            },
+            {
+                "id": "5",
+                "label": "5"
+            }
+        ]
+    },
+    "dataset": [{
+        "data": data
+    }],
+    colorrange: {
+        gradient: "0",
+        minvalue: "0",
+        code: "E24B1A",
+        startlabel: "Low",
+        endlabel: "High",
+        color: [{
+                code: "62b58f",
+                minvalue: "1",
+                maxvalue: "5",
+                label: "Low(1-5)"
+            },
+            {
+                code: "f8c533",
+                minvalue: "6",
+                maxvalue: "11",
+                label: "Medium(6-11)"
+            },
+            {
+                code: "f2726f",
+                minvalue: "12",
+                maxvalue: "25",
+                label: "High(12-25)"
+            }
+        ]
+    }
+};
+
+FusionCharts.options.license({
+  key: "bj1A1hwA-13F6B1H5D2D2C5B1C4D2D1D4G4I3xkcA3D5trxfsA2B2jE-11oE1G4E1A2B6C4E4F4B2B2C3I2G1C8B7B5E-11acE3E3G2sA4B2C2feI-8D1H4B3zD-13mD1D3G4nvrB9D2C6E2C4B1I4F1A9C11A5uD-11C-9A2I3NC5qD-17jD2E2F1H-8jC2a1A5C7fg1qH4G1B8C2D2C2D2C5F1G1G1B11B7E4i==",
+  creditLabel: false,
+});
+
+FusionCharts.ready(function() {
+  var myChart = new FusionCharts({
+        type: "heatmap",
+        renderAt: "chart-risk-rating",
+        width: "100%",
+        height: "100%",
+        dataFormat: "json",
+        dataSource,
+        events: {
+        dataPlotClick: function(event) {
+          var rating = event.data.tlLabel;
+          var search = "{{request.GET.search}}"
+          if (search == "mine") {
+              window.location.href = {% url 'risks' %} + "?rating=" + rating + "&self=True";
+          } else {
+              window.location.href = {% url 'risks' %} + "?rating=" + rating;
+          }
+        }
+      }
+    }).render();
+});
+
+function get_task_circle(status, due_date, created_at){
+  status_html = ""
+    var due_date = new Date(new Date(due_date).setHours(0,0,0,0))
+    if ([1, 2].includes(status)){
+      var created_at =  new Date(new Date(created_at).setHours(0,0,0,0))
+      var today = new Date(new Date().setHours(0,0,0,0))
+      var cmp_today = new Date(new Date().setHours(0,0,0,0))
+      var after_a_week = today.setDate(today.getDate() + 7);
+      var after_a_week = new Date(new Date(after_a_week).setHours(0,0,0,0))
+      create_diff = ((due_date - created_at)/(1000*60*60*24))
+      today_diff = ((due_date - cmp_today)/(1000*60*60*24))
+      status_html = "<div class='calender-event-circle1'></div>"
+      if (due_date >= after_a_week){
+        status_html = "<div class='calender-event-circle1'></div>"
+      }
+      if (((create_diff > 7) && (today_diff < 7)) || (
+                (create_diff <= 7) && (today_diff < (0.5 * create_diff))
+            )){
+        status_html = "<div class='calender-event-circle1' style='background-color:#f8c533;'></div>"
+      }
+      if (due_date < cmp_today){
+        status_html = "<div class='calender-event-circle1' style='background-color:#f2726f;'></div>"
+      }
+    }
+        
+    else if (status == 5){
+      status_html = "<i class='material-icons task_status_icon_dashboard'>check_circle</i>"
+    }else if (status == 4){
+      status_html = "<i class='material-icons task_status_icon_dashboard'>cancel</i>"
+    }else if (status == 3){
+      status_html = "<i class='material-icons task_status_icon_dashboard'>front_hand</i>"
+    }
+    return status_html
+}
+task_status = {
+  1: "Not Started",
+  2: "In Process",
+  3: "On Hold",
+  4: "Cancelled",
+  5: "Completed",
+}
+function render_window_calendar(){
+    var None = null
+    let task_data = {{tasks | safe}}
+    var calendarEl = document.getElementById('calendar');
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        // initialDate: '2022-12-07',
+        headerToolbar: {
+          left: '',
+          center: 'prev title next',
+          right: ''
+        },
+        contentHeight:"auto",
+        handleWindowResize:true,
+        eventContent: function(arg){
+            let italicEl = document.createElement('div')
+            italicEl.setAttribute("style", "display:flex;")
+            var status_html = get_task_circle(arg.event.extendedProps.status, arg.event._instance.range.start, arg.event.extendedProps.initial_date)
+            var status = arg.event.extendedProps.status
+            console.log(arg.event)
+            var due = arg.event._def.extendedProps.due_show_date
+              italicEl.innerHTML = `<div>${status_html}</div><div style='line-height: 1.5; padding-top: 4px' class='fc-custom-title'><a class="tooltip-parent tooltip-calendar" href='/task/${arg.event.extendedProps.pk}'><span style='vertical-align: text-top;'>${arg.event._def.title}</span><span class="tooltiptext">Status: ${task_status[status]} <br> Due: ${due}</span></a></div>`
+
+              let arrayOfDomNodes = [ italicEl ]
+              return { domNodes: arrayOfDomNodes }
+        },
+        datesSet: function () {
+          var current_month = document.getElementById('fc-dom-1').innerText
+          var months_dict = {
+            "January": 0, "February": 1, "March": 2, "April": 3,
+            "May": 4, "June": 5, "July": 6, "August": 7, "September": 8, "October": 9,
+            "November": 10, "December": 11
+          }
+          var month_code_dict = {
+            0: "January", 1: "February", 2: "March", 3: "April", 4: "May", 5: "June",
+            6: "July", 7: "August", 8: "September", 9: "October", 10: "November", 11: "December"
+          }
+          var prev = months_dict[current_month]
+          var next = months_dict[current_month]
+          if (prev == 0) {
+            prev = 11
+          } else {
+            prev = prev - 1
+          }
+          if (next == 11) {
+            next = 0
+          } else {
+            next = next + 1
+          }
+          next = month_code_dict[next]
+          prev = month_code_dict[prev]
+          document.getElementsByClassName('fc-prev-button')[0].innerText = "<< " + prev
+          document.getElementsByClassName('fc-next-button')[0].innerText = next + " >>"
+        },
+        titleFormat: {
+          month: "long"
+        },
+        events: task_data,
+        eventTextColor: 'black',
+      });
+      calendar.render();
+}
+function render_mobile_calendar(){
+    var calendarEl1 = document.getElementById('mobile-calendar');
+      var None = null
+      let task_data = {{tasks | safe}}
+      var mobile_calendar = new FullCalendar.Calendar(calendarEl1, {
+        initialView: 'listMonth',
+        headerToolbar: {
+          left: '',
+          center: 'prev title next',
+          right: ''
+        },
+        contentHeight:"auto",
+        handleWindowResize:true,
+        eventWillUnmount: function(arg){
+            document.querySelectorAll(".fc-event-div").forEach(el => el.remove());
+        },
+        datesSet: function () {
+          var current_month = document.getElementById('fc-dom-1').innerText
+          var months_dict = {
+            "January": 0, "February": 1, "March": 2, "April": 3,
+            "May": 4, "June": 5, "July": 6, "August": 7, "September": 8, "October": 9,
+            "November": 10, "December": 11
+          }
+          var month_code_dict = {
+            0: "January", 1: "February", 2: "March", 3: "April", 4: "May", 5: "June",
+            6: "July", 7: "August", 8: "September", 9: "October", 10: "November", 11: "December"
+          }
+          var prev = months_dict[current_month]
+          var next = months_dict[current_month]
+          if (prev == 0) {
+            prev = 11
+          } else {
+            prev = prev - 1
+          }
+          if (next == 11) {
+            next = 0
+          } else {
+            next = next + 1
+          }
+          next = month_code_dict[next]
+          prev = month_code_dict[prev]
+          document.getElementsByClassName('fc-prev-button')[0].innerHTML =
+          `<div class="row prev_month"><span> <<  &nbsp;</span> <span>${prev}</span>`
+          document.getElementsByClassName('fc-next-button')[0].innerHTML = `<div class="row next_month"><span>${next}</span><span> &nbsp; >> <br></span></div>`
+        },
+        eventDidMount: function(info){
+            var event_title = info.event._def.title
+            var date = new Date(info.el.fcSeg.start).getDate()
+            var today = new Date().getDate()
+            var verificaHorario = $(".fc-scroller").find("#" + date)
+            $(".fc-list-table ").hide()
+            console.log(info)
+            var status = info.event._def.extendedProps.status
+            var due = info.event._def.extendedProps.due_show_date
+            var check_status = info.event._def.extendedProps.status
+            if(verificaHorario.length == 0){
+                var new_style = ""
+                if(date == today){
+                    new_style = "style='background-color: #fdfae2;'"
+                }
+                var div = `
+                    <div class='fc-event-div' id="${date}" ${new_style}>
+                        <div class="date-div">${date}</div>
+                        <div id="date_${date}">
+                        <div class="event-div">
+                        <div>${get_task_circle(check_status, info.el.fcSeg.start, info.event._def.extendedProps.initial_date)}</div><div style='line-height: 1.3; padding-top: 4px' class='fc-custom-title'><a class="tooltip-parent tooltip-calendar" href='/task/${info.event._def.extendedProps.pk}'><span style='vertical-align: text-top;'>${event_title}</span><span class="tooltiptext">Status: ${task_status[status]} <br> Due: ${due}</span></a></div>
+                        </div>
+                        </div>
+                    </div>
+                `
+                $(".fc-scroller").append(div)
+            }else{
+                var div = `
+                        <div class="event-div"><div>${get_task_circle(check_status, info.el.fcSeg.start, info.event._def.extendedProps.initial_date)}</div><div style='line-height: 1.5; padding-top: 4px' class='fc-custom-title'><a class="tooltip-parent tooltip-calendar" href='/task/${info.event._def.extendedProps.pk}'><span style='vertical-align: text-top;'>${event_title}</span><span class="tooltiptext">Status: ${task_status[status]} <br> Due: ${due}</span></a></div></div>
+                `
+                var date_id = "#date_" + date
+                $(date_id).append(div)
+            }
+            },
+            titleFormat: {
+          month: "long"
+        },
+        events: task_data,
+        eventTextColor: 'black',
+      });
+      mobile_calendar.render();
+}
+function showCalendar(){
+    $("#charts").hide()
+    $("#filters").hide()
+    $("#calendar_btn").hide()
+    $("#dashboard_btn").show()
+    $("#calendar_div").show()
+   if($(window).width() >= 992){
+        $('#mobile-calendar').html('');
+        render_window_calendar()
+    }else{
+        $('#calendar').html('');
+        render_mobile_calendar()
+    }
+    const url = new URL(window.location);
+    url.searchParams.set('section', "CALENDAR");
+    window.history.pushState(null, '', url.toString());
+}
+function showDashBoard(){
+    $("#calendar_div").hide()
+    $("#charts").show()
+    $("#dashboard_btn").hide()
+    $("#calendar_btn").show()
+    $("#filters").show()
+    const url = new URL(window.location);
+    url.searchParams.set('section', "DASHBOARD");
+    window.history.pushState(null, '', url.toString());
+}
+window.addEventListener('resize', function(event) {
+    window.location.reload()
+}, true);
+</script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.0.1/index.global.min.js'></script>
+{% endblock javascripts %}

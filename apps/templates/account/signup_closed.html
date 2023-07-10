@@ -1,0 +1,27 @@
+{% extends "layouts/base.html" %}
+{% load i18n %}
+
+{% block title %}
+  {% trans "Sign Up Closed" %}
+{% endblock title %}
+
+{% block content %}
+  <div class="row" style="height: calc(100vh - 220px);">
+    <div class="offset-md-3 col-md-5 my-auto registration-modal">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">{% trans "Sign Ups Closed" %}</h4>
+        </div>
+        <div class="card-body">
+
+          <p>You are not allowed to sign up for a Gracen account without an invitation.</p>
+          <p>
+            Please contact your administrator so that they can send you an invitaiton email.
+            Once received, follow the link in the invitation email in order to complete the sign up process.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

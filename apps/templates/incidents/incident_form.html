@@ -1,0 +1,684 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Third Party Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .auto-label{
+    top: -1rem !important;
+    font-size: 0.6875rem !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    color: #AAAAAA !important;
+  }
+  .search_li{
+    width: 100%;
+    height: 37px;
+  }
+  .multiple-text{
+    font-size: 15px;
+    font-weight: 400;
+  }
+  .multiple-heading{
+    font-size: 14px;
+    color: grey;
+  }
+   pre {
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'incidents' %}">Incidents</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Incident
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Incident</h4>
+          <p class="card-category">Update the incident</p>
+        </div>
+        <div class="card-body">
+          <!-- History log starts -->
+          <pre class="history-log" id="history_log" style="min-height: 380px; height: 405px;">
+            {{model.get_history | safe}}
+          </pre>
+          <!-- History log end -->
+          <!-- Notes log starts -->
+          <div class="comment-log incident-comment-log" id="comment_log">
+            <form></form>
+            <div class="notes-popup" id="edit-notes" style="position: absolute;">
+              <form action="" id="edit-comment-form" class="form-container" method="post">
+                {% csrf_token %}
+                <div>
+                  <button type="submit" class="cancel-btn rounded-circle ml-2 tooltip-parent"><i class="material-icons" aria-hidden="true" style="font-size: 13px; padding-bottom: 3px;">arrow_upward</i><span class="tooltiptext">Save Edits</span></button>
+                  <button type="button" class=" cancel-btn rounded-circle tooltip-parent" onclick="closeForm()"><i class="material-icons" style="font-size: 10px;">clear</i> <span class="tooltiptext">Cancel Changes</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <textarea name="comment" id="edit-comment" style="display: none;"></textarea>
+                <div id="menu-area3" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." style="font-size: 12px;
+    height: 101px;
+    max-height: 70px;
+    overflow-y: hidden;
+    resize: vertical;
+    border: none;color: black; width: 100%;" id="edit-comment-div" class="chat-message-input-div task-chat-div" onkeyup="editComment()"></div>
+              </form>
+            </div>
+            <div class="messages incident-messages">
+              <ul id="chat-log" style="position: relative;">
+              </ul>
+            </div>
+            <form method="post" id="chat-message-form" {% if model.id %} action="{% url 'create-incident-notes' model.id %}" {% endif %}>
+              {% csrf_token %}
+              <div class="message-input">
+                <div style="">
+                  <hr class="notes-hr">
+                  <button class="submit tooltip-parent" id="chat-message-submit"><i class="material-icons" aria-hidden="true" type="submit">arrow_upward</i><span class="tooltiptext">Post Note</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <div class="wrap">
+                    <textarea style="display: none;"id="chat-message-input" name="comment"></textarea>
+            <div id="menu-area" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." id="chat-message-input-div" class="chat-message-input-div task-chat-div" onkeyup="updateComment()"></div>
+                </div>
+              </div>
+             </form>
+          </div>
+          <!-- Notes log end -->
+          
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+               <div class="form-group bmd-form-group">
+                  <label class="bmd-label-floating">{{ form.title.label }}</label>
+                  {{ form.title }}
+                </div>
+                <div class="form-group bmd-form-group">
+                  <label class="auto-label">{{ form.affected_resources.label }}</label>
+                  {{ form.affected_resources }}
+                  <select multiple class="form-control" name="linked_resource_" id="linked_resource_select">
+                      {% for data in resource_option_vendor %}
+                      <option value="{{data}}" data_type="THIRD_PARTY">{{data}}</option>
+                      {% endfor %}
+                      {% for data in resource_option_vendor_process %}
+                      <option value="{{data}}" data_type="PROCESS">{{data}}</option>
+                      {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="bmd-label-floating">{{ form.severity.label }}</label>
+                  {{ form.severity }}
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  {{ form.start_date }}
+                  <label class="auto-label">{{ form.start_date.label }}</label>
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="auto-label">{{ form.end_date.label }}</label>
+                  {{ form.end_date }}
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="bmd-label-floating">{{ form.status.label }}</label>
+                  {{ form.status }}
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="notes_btn_height">
+                <span class="pull-right history_icon">
+                  <span class="tooltip-parent" id="history_btn" {% if model.id %} onclick="showHistory()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined pr-1">history</span>
+                    <span class="tooltiptext">History</span>
+                  </span>
+                  
+                  <span class="tooltip-parent" id="log_btn" {% if model.id %} onclick="showNotes()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined">text_snippet</span>
+                    <span class="tooltiptext">Notes</span>
+                  </span>
+                </span>
+              </div>
+
+              <div class="form-group bmd-form-group is-filled mt-4">
+                <label class="auto-label">{{ form.description.label }}</label>
+                <div id="menu-area1" class="menu-area" role="listbox"></div>
+                <div onkeyup="updateDescription()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 133px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-description">{{model.get_description | safe}}</div>
+                {{ form.description }}
+              </div>
+              <div class="form-group bmd-form-group is-filled mt-3">
+                <label class="auto-label">{{ form.root_cause.label }}</label>
+                <div id="menu-area2" class="menu-area" role="listbox"></div>
+                <div onkeyup="updateCause()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 133px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-cause">{{model.get_cause | safe}}</div>
+                {{ form.root_cause }}
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Incident
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'incidents' %}">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if model.id %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Tasks
+          <a style="text-decoration: none;" href="{% url 'incident-task-create' model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if tasks %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col" class="hide_in_mobile_view">Created Date</th>
+                <th scope="col">Due Date</th>
+                <th scope="col">Status</th>
+                <th scope="col">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr>
+                <th scope="row">
+                  <a href="{% url 'incident-task-edit' task.id model.id %}">
+                    {{ task }}
+                  </a>
+                </th>
+                <td class="hide_in_mobile_view">{{ task.created_at.date }}</td>
+                <td>
+                  {% if task.due_date %}
+                    <div style='display:flex'><div class='circle_div'>{{task.get_status_task | safe }}</div> <span>{{ task.due_date }}</span></div>
+                   {% endif %}
+                </td>
+                <td>{{ task.get_status_display }}</td>
+                <td>
+                  {% if task.owner %}
+                    {{ task.owner }}
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no tasks.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function updateDescription(){
+    $("#description-text").val($("#edit-div-description").html().trim())
+    new Mentionify(
+      document.getElementById('edit-div-description'),
+      document.getElementById('menu-area1'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area1",
+      "#edit-div-description",
+      "#description-text",
+      0,
+      "INCIDENT"
+    )
+  }
+  function updateCause(){
+    $("#cause-text").val($("#edit-div-cause").html().trim())
+    new Mentionify(
+      document.getElementById('edit-div-cause'),
+      document.getElementById('menu-area2'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area2",
+      "#edit-div-cause",
+      "#cause-text",
+      0,
+      "INCIDENT"
+    )
+  }
+  function sortList() {
+    var list, i, switching, b, shouldSwitch;
+    list = document.getElementsByClassName("owner_list")[0];
+    switching = true;
+    while (switching) {
+      switching = false;
+      b = list.getElementsByTagName("LI");
+      for (i = 0; i < (b.length - 1); i++) {
+        shouldSwitch = false;
+        if (b[i].innerHTML.toLowerCase() > b[i + 1].innerHTML.toLowerCase()) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+      if (shouldSwitch) {
+        b[i].parentNode.insertBefore(b[i + 1], b[i]);
+        switching = true;
+      }
+    }
+  }
+  $(document).ready(function() {
+
+    var select = $('select[multiple]');
+    var options = select.find('option');
+
+    var div = $('<div />').addClass('selectMultiple');
+    var active = $('<div />');
+
+    var list = $('<ul id="search_ul" />').addClass("owner_list");
+    var search_li = ($("<input type='text' onkeyup='searchMultiple()' placeholder='Search....' id='search_input' />")).addClass('search_li');
+    list.append(search_li)
+    options.each(function() {
+        var text = $(this).text();
+        if($(this).is(':selected')) {
+            active.append($(`<a data_type="${$(this).attr("data_type")}" />`).html('<em>' + text + '</em><i></i>'));
+        } else {
+            list_el = ($(`<li data_type="${$(this).attr("data_type")}" />`));
+            list_el.append($(`<span class="multiple-text" />`).text(text))
+            if($(this).attr("data_type") == "THIRD_PARTY"){
+              list_el.append($(`<p class="multiple-heading" />`).text("Third Party"))
+            }else{
+              list_el.append($(`<p multiple-heading />`).text("Process"))
+            }
+            list.append(list_el);
+        }
+    });
+
+    active.append($('<div />').addClass('arrow'));
+    div.append(active).append(list);
+
+    select.wrap(div);
+
+    $(document).on('click', '.selectMultiple ul li', function(e) {
+        var select = $(this).parent().parent();
+        var li = $(this);
+        if(!select.hasClass('clicked')) {
+            select.addClass('clicked');
+            li.prev().addClass('beforeRemove');
+            li.next().addClass('afterRemove');
+            li.addClass('remove');
+            addRiskType(li.children("span").text())
+            var a = $(`<a data_type="${li.attr("data_type")}" />`).addClass('notShown').html('<em>' + li.children("span").text() + '</em><i></i>').hide().appendTo(select.children('div'));
+            a.slideDown(400, function() {
+                setTimeout(function() {
+                    a.addClass('shown');
+                    select.children('div').children('span').addClass('hide');
+                    select.find('option:contains(' + li.children("span").text() + ')').prop('selected', true);
+                }, 500);
+            });
+            setTimeout(function() {
+                if(li.prev().is(':last-child')) {
+                    li.prev().removeClass('beforeRemove');
+                }
+                if(li.next().is(':first-child')) {
+                    li.next().removeClass('afterRemove');
+                }
+                setTimeout(function() {
+                    li.prev().removeClass('beforeRemove');
+                    li.next().removeClass('afterRemove');
+                }, 200);
+
+                li.slideUp(400, function() {
+                    li.remove();
+                    select.removeClass('clicked');
+                });
+            }, 600);
+        }
+    });
+
+    $(document).on('click', '.selectMultiple > div a i', function(e) {
+        var select = $(this).parent().parent().parent();
+        var self = $(this).parent();
+        self.removeClass().addClass('remove');
+        select.addClass('open');
+        removeRiskType(self.children('em').text().trim().split("  ")[0])
+        setTimeout(function() {
+            self.addClass('disappear');
+            setTimeout(function() {
+                self.animate({
+                    width: 0,
+                    height: 0,
+                    padding: 0,
+                    margin: 0
+                }, 300, function() {
+                  var li = ($(`<li data_type="${$(this).attr("data_type")}" />`));
+                  li.append($(`<span class="multiple-text" />`).text(self.children('em').text().trim().split("  ")[0]))
+                  if(self.attr("data_type") == "THIRD_PARTY"){
+                    li.append($(`<p class="multiple-heading" />`).text("Third Party"))
+                  }else{
+                    li.append($(`<p multiple-heading />`).text("Process"))
+                  }
+                    li.addClass('notShown').appendTo(select.find('ul'));
+                      sortList();
+                    li.slideDown(400, function() {
+                        li.addClass('show');
+                        setTimeout(function() {
+                            select.find('option:contains(' + self.children('em').text().trim().split("  ")[0] + ')').prop('selected', false);
+                            if(!select.find('option:selected').length) {
+                                select.children('div').children('span').removeClass('hide');
+                            }
+                            li.removeClass();
+                        }, 400);
+                    });
+                    self.remove();
+                })
+            }, 300);
+        }, 400);
+    });
+
+    $(document).on('click', '.selectMultiple > div', function(e) {
+        $(this).parent().toggleClass('open');
+    });
+    sortList()
+});
+
+  function removeRiskType(val){
+    var risk_type = $("#linked_resource").val().trim()
+    val = val.trim()
+    if(risk_type == val){
+      $("#linked_resource").val(null)
+    }else{
+      new_val = ", "+val
+      new_val1 = val + ","
+      risk_type = risk_type.replace(new_val, "")
+      risk_type = risk_type.replace(new_val1, "")
+      $("#linked_resource").val(risk_type)
+    }
+
+  }
+  function addRiskType(val){
+    var risk_type = $("#linked_resource").val().trim()
+    val = val.trim()
+    if (risk_type == ""){
+      $("#linked_resource").val(val)
+    }else{
+      $("#linked_resource").val(risk_type + ", " + val)
+    }
+  }
+  var risk_val = "{{form.affected_resources.value | safe}}"
+  if(risk_val != "" | risk_val != undefined | risk_val != "None" ){
+    risk_val = risk_val.trim().split(", ")
+    $.each(risk_val, function(i,e){
+        $('#linked_resource_select option[value="' + e.trim() + '"]').prop("selected", true);
+    });
+
+  }
+  function searchMultiple(){
+    var input, filter, ul, li, a, i, txtValue;
+    input = document.getElementById('search_input');
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("search_ul");
+    li = ul.getElementsByTagName('li');
+
+    for (i = 0; i < li.length; i++) {
+      txtValue = li[i].textContent || li[i].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        li[i].style.display = "";
+      } else {
+        li[i].style.display = "none";
+      }
+    }
+  }
+  function showHistory(){
+    var x = document.getElementById("history_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  function showNotes(){
+    console.log("click")
+    var x = document.getElementById("comment_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  $(document).on('click', function(e) {
+    var container = $(".history-log");
+    var showBtn = $("#history_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+    var container = $(".comment-log");
+    var showBtn = $("#log_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+
+    var container1 = $(".selectMultiple > div");
+    var search = $("#search_ul");
+    if (!$(e.target).closest(container1).length && !$(e.target).closest(search).length) {
+      $(".selectMultiple > div").parent().removeClass('open');
+    }
+    });
+</script>
+<script type="text/javascript">
+function updateComment(){
+  $("#chat-message-input").val($("#chat-message-input-div").html().trim())
+    new Mentionify(
+      document.getElementById('chat-message-input-div'),
+      document.getElementById('menu-area'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area",
+      "#chat-message-input-div",
+      "#chat-message-input",
+      30
+    )
+}
+function editComment(){
+  $("#edit-comment").val($("#edit-comment-div").html().trim())
+    new Mentionify(
+      document.getElementById('edit-comment-div'),
+      document.getElementById('menu-area3'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area3",
+      "#edit-comment-div",
+      "#edit-comment",
+      30
+    )
+}
+$(document).ready(function() {
+    $('#chat-message-form').submit(function() {
+        var note = $("#chat-message-input").val().trim()
+        if (note == ""){
+          return false
+        }
+        $.ajax({
+            data: $(this).serialize(),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            success: function(response) {
+                $("#chat-message-input").val("")
+                $("#chat-message-input-div").text("")
+                newMessage()
+            }
+        });
+        return false;
+    });
+    newMessage()
+});
+
+function getDate(date) {
+    var today = new Date();
+    var created_at = new Date(date);
+    var date_text = ""
+    if (created_at.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
+        date_text = "Today"
+    } else if (new Date(created_at.getDate() - 1).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 1)).setHours(0, 0, 0, 0)) {
+        date_text = "1d"
+    } else if (new Date(created_at.getDate() - 2).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 2)).setHours(0, 0, 0, 0)) {
+        date_text = "2d"
+    } else if (new Date(created_at.getDate() - 3).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 3)).setHours(0, 0, 0, 0)) {
+        date_text = "3d"
+    } else if (new Date(created_at.getDate() - 4).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 4)).setHours(0, 0, 0, 0)) {
+        date_text = "4d"
+    } else if (new Date(created_at.getDate() - 5).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 5)).setHours(0, 0, 0, 0)) {
+        date_text = "5d"
+    } else {
+        var month = created_at.getUTCMonth() + 1;
+        var day = created_at.getUTCDate();
+        var year = created_at.getUTCFullYear();
+        date_text = month + "/" + day + "/" + year;
+    }
+    return date_text
+}
+$('#edit-comment-form').submit(function() {
+    var id = $("#edit-comment-form").attr("note_id")
+    var edit_note = $("#edit-comment-div").html().trim()
+    $("#edit-comment").val(edit_note)
+    if (edit_note == ""){
+      return false
+    }
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            var edited = $("#edit-comment").val()
+            var edit_p = "#msg_" + id
+            $(edit_p).html(edited)
+
+            closeForm()
+        }
+    });
+    return false;
+});
+
+function openForm(text, id) {
+    var msg_id = "#msg_"+id
+    var text = $(msg_id).html()
+    $("#edit-comment-div").html(text)
+    var form_url = "/notetest/edit/" + id + "/incident/" + {{model.id}}
+    $("#edit-comment-form").attr("action", form_url)
+    $("#edit-comment-form").attr("note_id", id)
+    document.getElementById("edit-notes").style.display = "block";
+}
+
+function closeForm() {
+    document.getElementById("edit-notes").style.display = "none";
+}
+
+function newMessage() {
+    $.ajax({
+        type: "GET",
+        url: "/notetest/create/incident/"+{{model.id}},
+        success: function(response) {
+            data = response.data
+            $("#chat-log").empty();
+            for (i = 0; i < data.length; i++) {
+                var message = data[i]['comment'];
+                var author = data[i]['author_id'];
+                var msgListTag = document.createElement('li');
+                author_name = data[i]['author_first_name'][0].toUpperCase() + data[i]['author_last_name'][0].toUpperCase()
+                var divTag = document.createElement('div');
+                var spanAuthor = document.createElement('span');
+                var spanDate = document.createElement('span');
+                var spanOuter = document.createElement('span');
+                var spanTitle = document.createElement('span');
+                // <span class="tooltiptext">Cancel Changes</span>
+                if (author == "{{request.user.id}}"){
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent1"
+                }else{
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent2"
+                }
+                spanAuthor.textContent = author_name;
+                spanTitle.className = "tooltiptext"
+                spanTitle.textContent = data[i]['author_first_name'] + " " + data[i]['author_last_name'];
+                spanAuthor.appendChild(spanTitle)
+                spanDate.className = "message_date"
+                spanDate.textContent = getDate(data[i]['created_at']);
+                divTag.className = "edit-message"
+                var pTag = document.createElement('p');
+                pTag.innerHTML = message
+                if (author == "{{request.user.id}}") {
+                    var iTag = document.createElement("i")
+                    var spanTag1 = document.createElement("span")
+                    spanTag1.className = "tooltip-parent tooltip-parent2"
+                    spanTag1.setAttribute("style", "color: grey")
+                    var titleTag = document.createElement("span")
+                    titleTag.className = "tooltiptext"
+                    iTag.className = "material-icons edit_notes_icon"
+                    iTag.textContent = "edit_note"
+                    titleTag.textContent = "Edit Note"
+                    spanTag1.setAttribute("onclick", `openForm('${data[i]['comment']}', '${data[i]['id']}')`)
+                    // iTag.setAttribute("title", "Edit Note")
+                    msgListTag.className = "replies"
+                    spanTag1.appendChild(iTag)
+                    spanTag1.appendChild(titleTag)
+                    divTag.appendChild(spanTag1)
+                    spanOuter.appendChild(spanDate)
+                    spanOuter.appendChild(spanAuthor)
+                } else {
+                    msgListTag.className = "sent"
+                    spanOuter.appendChild(spanAuthor)
+                    spanOuter.appendChild(spanDate)
+                }
+                divTag.appendChild(spanOuter)
+                msgListTag.appendChild(divTag)
+                pTag.setAttribute("id", "msg_"+data[i]['id'])
+                msgListTag.appendChild(pTag)
+                document.querySelector('#chat-log').appendChild(msgListTag);
+            }
+            $(".messages").scrollTop($(".messages")[0].scrollHeight);
+        }
+    });
+}
+
+
+</script>
+{% endblock javascripts %}

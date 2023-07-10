@@ -1,0 +1,160 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block title %} Questionnaire Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .auto-label{
+    top: -1rem !important;
+    font-size: 0.6875rem !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    color: #AAAAAA !important;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'gracen_admin_home' %}">Administration</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'djf_surveys:gracen_admin_survey' %}">Questionnaires</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not object.id %}
+      New Questionnaire
+      {% else %}
+      {{ object }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Questionnaire
+            {% if object.id %}
+            {% endif %}
+          </h4>
+          <p class="card-category">Update the Questionnaire</p>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 col-12">
+               <div class="form-group bmd-form-group">
+                  <label class="bmd-label-floating">Name</label>
+                  <input type="text" name="name" value="{{object.name}}" class="form-control" required>
+                </div>
+                <div class="row">
+                 
+                 <div class="col-sm-12 col-12 checkbox-col">
+                  <div class="form-group bmd-form-group">
+                    <label class="bmd-label-floating">Active</label>
+                    <input type="checkbox" name="active" {% if object.active %}checked{% endif %} class="form-checkboxes">
+                  </div>
+                 </div>
+                </div>   
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="form-group bmd-form-group is-filled mt-4">
+                <label class="auto-label">Description</label>
+                <textarea required name="description" class="form-control resize-textarea text-div" style="height: 100px; overflow-y: scroll; width: 100%; overflow-x: none;">{{object.description}}</textarea>
+              </div>
+            </div>
+          </div>
+          {% if object.id %}
+          <a type="button" class="btn btn-dark text-white" style="background-color: gray;"  {% if question %} data-toggle="modal" data-target="#grc-version-popup" {% else %} href="{% url 'djf_surveys:gracen_admin_question_list' object.id %}" {% endif %}>
+             Edit Questions
+          </a>
+
+          <div class="modal"  id="grc-version-popup" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content" style="width:580px; height:400px;">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title">Gracen Version</h4>
+                </div>
+                <div class="modal-body">
+                  <div><h4 class="text-center mt-5">Do you want to update the version of this questionnaries?</h4></div>
+                    
+                  <div class="row p-5">
+                    <div class="col-sm-12 d-flex justify-content-between">
+                      <div> 
+                        <h5>Current Vession : {{object.gracen_version| floatformat:2}}</h5>
+                      </div>
+                    
+                      <div class="d-flex">
+                        <span>New Version :</span> 
+                        <input id="new_grc_version" min="" step="0.01" value="" type="number" style="width: 60px; height: 25px;">
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between p-5">
+                  <button type="button" id="previous_grc_version" class="btn btn-dark p-2" data-dismiss="modal">No - Keep current Version</button>
+                  <button type="button" class="btn btn-primary" id="update_grc_version">YES - UPDATE VERSION</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <a type="button" class="btn btn-dark" style="background-color: gray;" {% if object.answer %} href="{% url 'djf_surveys:gracen_admin_edit' object.answer.id %}" {% else %} href="{% url 'djf_surveys:gracen_admin_create' object.slug %}" {% endif %}>
+             Preview Questionnaire
+          </a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if object.id %} Update {% else %} Create {% endif %} Questionnaire
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'djf_surveys:gracen_admin_survey' %}">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+$(document).ready(function() {
+  var gracen_version = {{object.gracen_version}};
+  $('#new_grc_version').attr({
+       "min" : gracen_version + 0.01,      
+       "value":gracen_version + 0.01       
+    });
+});
+$('#update_grc_version').on("click",function(){
+  var new_grc_version = $('#new_grc_version').val()
+  console.log(new_grc_version,"new_grc_version")
+  var id = {{object.id}}
+  $.ajax({
+          type: "POST",
+          url:"{% url 'djf_surveys:update_grc_version' pk=0 %}".replace(0, id),
+          data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}',
+            'new_grc_version':new_grc_version,
+          },
+          success: function(response) {
+            window.location.href = "{% url 'djf_surveys:gracen_admin_question_list' pk=0 %}".replace(0, id)
+          },
+      });
+});
+$('#previous_grc_version').click(function(){
+  var id = {{object.id}}
+  window.location.href = "{% url 'djf_surveys:gracen_admin_question_list' pk=0 %}".replace(0, id)
+})
+</script>
+{% endblock javascripts %}

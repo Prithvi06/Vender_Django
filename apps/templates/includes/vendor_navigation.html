@@ -1,0 +1,119 @@
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top col-10">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index"
+      aria-expanded="false" aria-label="Toggle navigation">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="navbar-toggler-icon icon-bar"></span>
+      <span class="navbar-toggler-icon icon-bar"></span>
+      <span class="navbar-toggler-icon icon-bar"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-end">
+      {% if request.user.is_authenticated %}
+
+      <ul class="navbar-nav">
+        <li class="nav-item">{{ vendor }} - Third Party</li>
+        <li class="nav-item dropdown">
+          <a class="nav-link pr-0" href="#pablo" id="navbarDropdownProfile" data-toggle="dropdown" aria-haspopup="true"
+            aria-expanded="false">
+            <em class="material-icons mr-0">person</em>
+            <p class="d-lg-none d-md-block">
+              Account
+            </p>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
+            <a class="dropdown-item" href="{% url 'logout' %}">Log out</a>
+            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#resetPassword">Reset Password</a>
+          </div>
+        </li>
+      </ul>
+
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<!-- popup -->
+<div class="modal fade" id="resetPassword" tabindex="-1" role="dialog" aria-labelledby="resetPasswordTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h6 class="mb-4">Reset Your Password</h6>
+        <form id="password-form" method="post" action="{% url 'change_password' %}" spellcheck="false" autocomplete="off">
+          {% csrf_token %}
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">Old Password</label>
+            <input type="password" name="old_password" class="form-control">
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">New Password</label>
+            <input type="password" name="new_password" class="form-control" id="Password">
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            <label class="bmd-label-floating">Confirm Password</label>
+            <input type="password" name="confirm_password" class="form-control" id="confirm_password">
+          </div>
+          <div style="font-size: 13px;">
+            <span id="password-text" style="display: none;"><b>Password Strength: <span id="strength">WEAK</span></b></span>
+            <span style="display: none; color: red; font-weight: bold;" id="password-check">Passwords do not match.</span>
+          </div>
+          <button class="btn btn-primary pull-right" type="submit">Reset Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end -->
+<script type="text/javascript">
+  $("#Password").keyup(function(){
+      var password = zxcvbn($(this).val())
+      $("#password-text").hide()
+      if(($(this).val().length) <= 0){
+        $("#password-text").hide()
+      }else{
+        if(password.score == 3){
+          $("#password-text").show()
+          $("#password-text").css("color", "orange");
+          $("#strength").text("MODERATE");
+        }else if(password.score == 4){
+          $("#password-text").show()
+          $("#password-text").css("color", "green");
+          $("#strength").text("STRONG");
+        }else{
+          $("#password-text").show()
+          $("#password-text").css("color", "red");
+          $("#strength").text("WEAK");
+        }
+      }
+      $('#password-form').submit(function(e) {
+        
+        var new_password = $("#Password").val()
+        var confirm_password = $("#confirm_password").val()
+        if(new_password == confirm_password){
+            $.ajax({
+                data: $(this).serialize(),
+                type: $(this).attr('method'),
+                url: $(this).attr('action'),
+                success: function(response) {
+                  if(response.message == "ERROR"){
+                    $("#password-check").text("Old password do not match.")
+                    $("#password-check").show()
+                    $("#password-text").hide()
+                  }else{
+                    window.location.reload()
+                  }
+                },
+                error: function(e, x, r) {
+                    console.log(e)
+                }
+            });
+            return false;
+          }else{
+            $("#password-check").text("Passwords do not match.")
+            $("#password-check").show()
+            $("#password-text").hide()
+          }
+          e.preventDefault()
+    });
+  });
+</script>

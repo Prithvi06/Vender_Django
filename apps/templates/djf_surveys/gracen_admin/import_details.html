@@ -1,0 +1,84 @@
+{% extends "layouts/admin_base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Questionnaires {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'gracen_admin_home' %}">Administration</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      <a href="{% url 'djf_surveys:gracen_admin_survey' %}">Questionaires</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {{object}}
+    </li>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Usage
+        </h4>
+      </div>
+      {% if surveys %}
+      <div class="card-body">         
+        <form spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="q" type="text" class="form-control col-sm-3" placeholder="Search..."
+              value="{{ request.GET.q }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+        <div class="tile_div">
+          <span class="total_vendor">{{total_count}}</span>
+          <span class="tile_name">{% if total_count == 1 %} Organization {% else %} Organizations{% endif %}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mt-3">
+            <thead>
+              <tr>
+                <th scope="col">Organization Name</th>
+                <th scope="col">Date Imported</th>
+                <th scope="col">Imported By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for survey in surveys %}
+              <tr>
+                <td scope="row">
+                    {{ survey.org.name }}
+                </td>
+                <td>
+                  {{ survey.created_at }}
+                </td>
+                <td>
+                  {{survey.user.first_name}} {{survey.user.last_name}}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <p class="pl-3">This questionniare is not in use by any organizations.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

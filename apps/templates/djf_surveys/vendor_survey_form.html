@@ -1,0 +1,135 @@
+{% extends "layouts/vendor_base.html" %}
+{% load render_table from django_tables2 %}
+{% load djf_survey_tags %}
+
+
+{% block title %} Risks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-10">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Questionnaire
+        </h4>
+      </div>
+      {% if form %}
+      <div class="card-body">
+        <form method="post">
+        {% csrf_token %}
+        <div class="notes_btn_height">
+          <button class="btn btn-primary pull-right" type="submit">Save and Submit</button>
+        </div>
+        <div style="clear: both;"></div>
+          <div class="d-flex">
+            <div class="question_top_div">
+            {% for field in form %}
+            {% if not field.field.widget.attrs.question_type == 'na_explain' %}
+            <div class="question_tile">
+              <div class="dice_div">
+                <h6 class="text-center question_number tooltip-parent tooltip-parent2 question_number_tip" style="display: block !important;"><span>{{field.field.widget.attrs.question_count}}</span><span class="tooltiptext">{{field.field.widget.attrs.question_id}} - [{{field.field.widget.attrs.question_key}}]</span></h6>
+                <div class="sixth-face dice" style="cursor: pointer;">
+                  <i class="material-icons drag_indicators">drag_indicator</i>
+                </div>
+              </div>
+              <div class="question_tile_div">
+              <h5>{{field.label}}</h5>
+              <div class="mt-1">
+                  {% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'checkbox' %}
+                  <div class="form-group" style="padding-bottom:0px;">
+                      {{ field }}
+                      {% if field.field.widget.attrs.question_type == 'Yes-No-NA' %}
+                        <div class="form-group bmd-form-group is-filled mt-4 pb-1">
+                            <div style="display: flex; justify-content: space-between;">
+                              <label class="auto-label" style="font-size:14px!important">If N/A, explain</label>
+                              <span class="help-block"><span class="label_count">{{field.field.widget.attrs.na_explain_value|length}}</span> / 500</span>
+                            </div>
+                          <textarea name="na_explain_{{field.field.widget.attrs.question_id}}" class="text-div" onkeyup="charCount(this)" style="height: 60px;  width: 100%;">{{field.field.widget.attrs.na_explain_value}}</textarea>
+                        </div>
+                      {% endif %}
+                  </div>
+                  {% elif field.field.widget.input_type == 'hidden' %}
+                  <div class="rating">
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="1" {% if field.value == "1" %} checked {% endif %} required ="{{field.field.required}}"   />
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="2" {% if field.value == "2" %} checked {% endif %} required ="{{field.field.required}}"   />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="3" {% if field.value == "3" %} checked {% endif %} required ="{{field.field.required}}"   />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="4" {% if field.value == "4" %} checked {% endif %} required ="{{field.field.required}}"   />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="5" {% if field.value == "5" %} checked {% endif %} required ="{{field.field.required}}"   />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                  </div>
+                  {% elif field.field.widget.attrs.indicator == 'date' %}
+                  <div class="form-group bmd-form-group">
+                    <input type="date" name="{{field.name}}" class="form-control" id="{{field.auto_id}}" required="{{field.field.required}}" value="{{field.value}}">
+                  </div>
+                  {% else %}
+                  <div class="form-group">
+                    {% if field.field.widget.input_type == 'text' %}
+                      {{ field|addclass:'form-control' }}
+                      <span class="help-block" style="float:right;"><span class="label_count">{{field.value|length}}</span> / 500</span>
+                    {% else %}
+                      {{ field|addclass:'form-control' }}
+                    {% endif %}
+                  </div>
+                  {% endif %}
+              </div>
+              <div class="help_text" style="height: 40px">{{field.help_text}}</div>
+            </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            </div>
+          </div>
+      </form>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Questionnaires.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function charCount(e){
+    label_len = e.value.length
+    if (label_len >= 500) {
+      e.value = e.value.substring(0, 500)
+    }
+    e.parentElement.getElementsByClassName("label_count")[0].innerText = e.value.length
+  }
+</script>
+{% endblock javascripts %}

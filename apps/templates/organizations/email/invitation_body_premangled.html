@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: 'Lexend Deca', sans-serif;
+        color: #130303;
+        margin: 0;
+        background-color: #ECECEC;
+      }
+
+      footer {
+        background-color: #424549;
+        color: #ECECEC;
+        text-align: center;
+        padding: 30px 0px;
+        margin: 50px 0px;
+        font-style: italic;
+        font-size: smaller;
+      }
+
+      header {
+        padding-top: 40px;
+        padding-bottom: 50px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .content {
+        margin-left: 10%;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <header>
+      <img src="https://app.gracen.io/static/assets/img/logo.png" alttext="GRaCen" title="GRaCen" style="width: 200px">
+    </header>
+    <div class="content">
+      Hello {{ first_name|safe }},
+      <br>
+      <br>
+      <p>
+        {{ inviter.first_name|safe }} {{ inviter.last_name|safe }} has invited you to
+        Gracen to help manage {{ organization|safe }}'s Compliance needs.
+      </p>
+      <p>
+        Please
+        <a href="{{ scheme }}://{{ domain.domain }}{% url "invitations_register" user.pk token %}">CLICK HERE</a>
+        to finish setting-up your account and start using Gracen.  If you are unsure
+        about this link, or have issues, please contact the sender.
+      </p>
+      <br>
+      Best,<br>
+      <i>- The Gracen Team</i>
+    </div>
+    <footer>
+      &copy; 2022 Gracen, All Rights Reserved<br>
+      support@gracen.io | https://gracen.io
+    </footer>
+  </body>
+</html>

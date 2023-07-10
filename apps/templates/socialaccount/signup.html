@@ -1,0 +1,63 @@
+{% extends "layouts/base.html" %}
+{% load i18n %}
+
+{% block title %}
+  {% trans "Sign Up" %}
+{% endblock title %}
+
+{% block content %}
+  <div class="row align-items-center" style="height: calc(100vh - 220px);">
+    <div class="offset-md-3 col-md-5 my-auto registration-modal">
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">{% trans "Sign Up" %}</h4>
+        </div>
+        <div class="card-body">
+
+          <p>
+            {% trans "You are about to use your" %}
+            {{ account.get_provider.id|capfirst }}
+            {% trans "account to login to" %}
+            {{ site.name }}.
+            {% trans "As a final step, please complete the following form:" %}
+          </p>
+
+          <form class="signup"
+                id="signup_form"
+                method="post"
+                action="{% url 'socialaccount_signup' %}">
+            {% csrf_token %}
+
+            <br />
+
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label class="bmd-label-floating">{{ form.email.label }}</label>
+                  <input type="email"
+                         name="email"
+                         class="form-control"
+                         autocomplete="email"
+                         value="{{ form.email.value }}"
+                         required
+                         id="id_email"/>
+                  {{ form.email.errors }}
+                </div>
+              </div>
+            </div>
+
+            {% if redirect_field_value %}
+              <input type="hidden"
+                     name="{{ redirect_field_name }}"
+                     value="{{ redirect_field_value }}"/>
+            {% endif %}
+
+            <br/>
+
+            <button type="submit" class="btn btn-primary">{% trans "Sign Up" %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

@@ -1,0 +1,24 @@
+{% if widget.wrap_label %}
+    <label {% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %} class="flex items-center text-sm" style="padding-top: 0px;padding-bottom: 0.4rem;margin-bottom:0px;margin-top:0.5rem">
+{% endif %}
+
+{% if widget.attrs.required and not widget.attrs.value %}
+        <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value }}"{% endif %}
+            class="w-6 h-6 border border-gray-200 rounded-md {{widget.attrs.question_id}}"  
+            {% include "django/forms/widgets/attrs.html" %}
+            onclick="removeRequired('{{widget.attrs.question_id}}')">
+    {% else %}
+ 
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value }}"{% endif %}
+            class="w-6 h-6 border border-gray-200 rounded-md {{widget.attrs.question_id}}"  
+            question_key={{widget.attrs.question_key}}
+            question_id={{widget.attrs.question_id}}
+            id={{widget.attrs.id}}
+            {% if widget.value in widget.attrs.value %} checked {% endif %}
+            onclick="removeRequired('{{widget.attrs.question_id}}', {{widget.attrs.required}})">
+    
+{% endif %}
+        <span class="ml-3 font-medium">{{ widget.choice_label }}</span>
+{% if widget.wrap_label %} {{ widget.label }}
+    </label>
+{% endif %}

@@ -1,0 +1,518 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Contact Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'vendor-edit' model.vendor_id %}?section=CONTACTS">{{ model.vendor_name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Contact
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      {% if model.id %}
+      <!-- popup -->
+      <div class="modal fade" id="deleteContact" tabindex="-1" role="dialog" aria-labelledby="deleteContactTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              <h4 class="pb-5">Are you sure you want delete this <b>{{model}}?</b></h4>
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" href="{% url 'contact-delete' model.vendor_id model.id %}">Yes - Delete</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      <!-- popup for OFAC Results -->
+      {% if ofac_results %}
+        <div class="modal fade" id="matchedContact" tabindex="-1" role="dialog" aria-labelledby="matchedContact" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="model-header card-header-primary ">
+                        <h4 class="">Possible OFAC / SDN Match</h4>
+                    </div>
+                    <div class="modal-body pt-5">
+                        <h6 class="pb-3" style="font-size: 14px; text-transform: capitalize;">We found a possible match to this contact on the OFAC / SDN list. Please review and decide how you want to proceed.</h6>
+                        <div class="mb-4 p-2 pl-3 pr-3" style="overflow-y: scroll; height:400px; border: 1px solid lightgrey;">
+                            {% for result in ofac_results %}
+                            <div class="mb-3">
+                                <p style="font-size: 14px">{{result.created_at}}</p>
+                                <p style="font-size: 14px">Match Type: (SDN NAME ({{result.total_sdn}}), ADDRESSES ({{result.total_address}}), ALIASES ({{result.total_alias}}))</p>
+                                <p class="p-0 keys">Number: {{result.result.Number}}</p>
+                                <p class="p-0 keys">Name: {{result.result.Name}}</p>
+                                <p class="p-0 keys">Title: {{result.result.Title}}</p>
+                                <p class="p-0 keys">Remarks: {{result.result.Remarks}}</p>
+                                {% if result.result.Aliases %}
+                                <p class="mb-2 mt-3"> ---Aliases---</p>
+                                {% for alias in result.result.Aliases %}
+                                <p class="p-0 keys">Alt Name: {{alias.AltName}}</p>
+                                <p class="p-0 keys">Remarks: {{alias.Remarks}}</p>
+                                {% endfor %}
+                                {% endif %}
+                                {% if result.result.Addresses %}
+                                <p class="mb-2 mt-3"> ---Addresses---</p>
+                                {% for address in result.result.Addresses %}
+                                <p class="p-0 keys">Address: {{address.Address}}</p>
+                                <p class="p-0 keys">Remarks: {{address.Remarks}}</p>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                            <hr></hr>
+                            {% endfor %}
+                        </div>
+                        <a class="btn btn-primary pull-left" href="{% url 'ignore-ofac-result' model.vendor_id model.id %}">Ignore - This is not a match</a>
+                        <a type="button" class="btn btn-primary pull-right" href="{% url 'create-ofac-result-task' model.vendor_id model.id %}">Create a Task - Research further</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+      <!-- end -->
+      {% endif %}
+      {% endif %}
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Contact{% if model.id %} <a  class="pull-right delete-btn tooltip-parent" data-toggle="modal" data-target="#deleteContact"><i class="material-symbols-outlined">delete</i><span class="tooltiptext">Delete Contact</span></a>{% endif %}</h4>
+          <p class="card-category">Update the contact information</p>
+        </div>
+        <div class="card-body">
+
+          <!-- Notes log starts -->
+          <div class="comment-log contact-comment-log" id="comment_log">
+            <form></form>
+            <div class="notes-popup" id="edit-notes" style="position: absolute;">
+              <form action="" id="edit-comment-form" class="form-container" method="post">
+                {% csrf_token %}
+                <div>
+                  <button type="submit" class="cancel-btn rounded-circle ml-2 tooltip-parent"><i class="material-icons" aria-hidden="true" style="font-size: 13px; padding-bottom: 3px;">arrow_upward</i><span class="tooltiptext">Save Edits</span></button>
+                  <button type="button" class=" cancel-btn rounded-circle tooltip-parent" onclick="closeForm()"><i class="material-icons" style="font-size: 10px;">clear</i> <span class="tooltiptext">Cancel Changes</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <textarea name="comment" id="edit-comment" style="display: none;"></textarea>
+                <div id="menu-area2" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." style="font-size: 12px;
+    height: 101px;
+    max-height: 70px;
+    overflow-y: hidden;
+    resize: vertical;
+    border: none;color: black; width: 100%;" id="edit-comment-div" class="chat-message-input-div" onkeyup="editComment()"></div>
+              </form>
+            </div>
+            <div class="messages contact-messages">
+              <ul id="chat-log" style="position: relative;">
+              </ul>
+            </div>
+            <form method="post" id="chat-message-form" {% if model.id %} action="{% url 'create-contact-notes' model.id %}" {% endif %}>
+              {% csrf_token %}
+              <div class="message-input">
+                <div style="">
+                  <hr class="notes-hr">
+                  <button class="submit tooltip-parent" id="chat-message-submit"><i class="material-icons" aria-hidden="true" type="submit">arrow_upward</i><span class="tooltiptext">Post Note</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <div class="wrap">
+                    <textarea style="display: none;"id="chat-message-input" name="comment"></textarea>
+                    <div id="menu-area1" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." id="chat-message-input-div" class="chat-message-input-div task-chat-div" onkeyup="updateComment()"></div>
+                </div>
+              </div>
+             </form>
+          </div>
+          <!-- Notes log end -->
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+              <div class="form-group bmd-form-group">
+                {{ form.first_name }}
+                <label class="bmd-label-floating">{{ form.first_name.label }}</label>
+                {{ form.errors.first_name }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.last_name }}
+                <label class="bmd-label-floating">{{ form.last_name.label }}</label>
+                {{ form.errors.last_name }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.email }}
+                <label class="bmd-label-floating">{{ form.email.label }}</label>
+                {{ form.errors.email }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.role.label }}</label>
+                {{ form.role }}
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="notes_btn_height">
+                <span class="pull-right history_icon">
+                  <span class="tooltip-parent" id="log_btn" {% if model.id %} onclick="showNotes()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined">text_snippet</span>
+                    <span class="tooltiptext">Notes</span>
+                  </span>
+                </span>
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.line_1 }}
+                <label class="bmd-label-floating">{{ form.line_1.label }}</label>
+                {{ form.errors.line_1 }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.line_2 }}
+                <label class="bmd-label-floating">{{ form.line_2.label }}</label>
+                {{ form.errors.line_2 }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.city }}
+                <label class="bmd-label-floating">{{ form.city.label }}</label>
+                {{ form.errors.city }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.state }}
+                <label class="bmd-label-floating">{{ form.state.label }}</label>
+                {{ form.errors.state }}
+              </div>
+              <div class="form-group bmd-form-group">
+                {{ form.zip_code }}
+                <label class="bmd-label-floating">{{ form.zip_code.label }}</label>
+                {{ form.errors.zip_code }}
+              </div>
+              <button type="submit" class="btn btn-primary pull-right">
+                {% if model.id %} Update {% else %} Create {% endif %} Contact
+              </button>
+              <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'vendor-edit' model.vendor_id %}?section=CONTACTS">
+                 Cancel
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if model.id %}
+<a href="{% url 'create-contact-notes' model.id %}" id="contact_note_url" hidden></a>
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Phone Numbers
+          <a style="text-decoration: none;" href="{% url 'phone-create' model.vendor_id model.id %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if phones %}
+        <table class="table table-hover table-sm">
+          <caption style="display: none;">Contact Phone Numbers</caption>
+          <thead>
+            <tr>
+              <th scope="col">Number</th>
+              <th scope="col">Type</th>
+              <th scope="col">Preferred</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for phone in phones %}
+            <tr>
+              <th scope="row">
+                <a href="{% url 'phone-edit' model.vendor_id model.id phone.id %}">
+                  {{ phone }}
+                </a>
+              </th>
+              <td>{{ phone.get_type_display }}</td>
+              <td>{{ phone.is_preferred }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>There are no phone numbers.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTGGgzsUinKyUWGWE7gdKtmQr1_eMCkNo&libraries=places&callback=activatePlacesSearch"></script>
+<script type="text/javascript">
+  $(document).ready(function(){
+      var result = '{{ofac_results}}'
+      if (result != "None"){
+        $('#matchedContact').modal('show');
+      }
+    })
+  function fillInAddress(place) {
+      var element = document.getElementsByClassName("form-group");
+      var line1 = ''
+      for (var i = 0; i < place.address_components.length; i++) {
+          var addressType = place.address_components[i].types[0];
+          if (componentForm[addressType]) {
+              var val = place.address_components[i][componentForm[addressType]];
+              var add_id = "#" + addressType
+              if (['premise', 'route', 'neighborhood', 'street_number', 'plus_code'].includes(addressType)) {
+                if (line1 == '') {
+                    line1 = val
+                } else {
+                    line1 = line1 + ' ' + val
+                }
+              } else {
+                  $(add_id).val(val)
+              }
+          }
+      }
+      $("#address_line1").val(line1)
+      $("#address_line1").focusin()
+  }
+  var autocomplete;
+  var componentForm = {
+      administrative_area_level_1: 'short_name',
+      postal_code: 'long_name',
+      locality: 'long_name',
+      sublocality_level_1: 'long_name',
+      route: 'long_name',
+      premise: 'long_name',
+      neighborhood: 'long_name',
+      street_number: 'long_name',
+      plus_code: 'long_name'
+
+  };
+
+  function activatePlacesSearch() {
+      var input = document.getElementById('address_line1')
+      autocomplete = new google.maps.places.Autocomplete(input, {
+          componentRestrictions: {
+              country: 'us'
+          }
+      });
+      autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          fillInAddress(place)
+      })
+  }
+function updateComment(){
+  $("#chat-message-input").val($("#chat-message-input-div").html().trim())
+}
+new Mentionify(
+      document.getElementById('chat-message-input-div'),
+      document.getElementById('menu-area1'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area1",
+      "#chat-message-input-div",
+      "#chat-message-input",
+      30
+    )
+  function editComment(){
+  $("#edit-comment").val($("#edit-comment-div").html().trim())
+    new Mentionify(
+      document.getElementById('edit-comment-div'),
+      document.getElementById('menu-area2'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area2",
+      "#edit-comment-div",
+      "#edit-comment",
+      30
+    )
+}
+</script>
+
+{% endblock %}
+
+{% block javascripts %}
+<script type="text/javascript">
+  function showNotes(){
+    var x = document.getElementById("comment_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  $(document).on('click', function(e) {
+    console.log("document")
+    var container = $(".comment-log");
+    var showBtn = $("#log_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+});
+$(document).ready(function() {
+    $('#chat-message-form').submit(function() {
+        var note = $("#chat-message-input").val().trim()
+        if (note == ""){
+          return false
+        }
+        $.ajax({
+            data: $(this).serialize(),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            success: function(response) {
+                $("#chat-message-input").val("")
+                $("#chat-message-input-div").text("")
+                newMessage()
+            }
+        });
+        return false;
+    });
+    newMessage()
+});
+
+function getDate(date) {
+    var today = new Date();
+    var created_at = new Date(date);
+    var date_text = ""
+    if (created_at.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
+        date_text = "Today"
+    } else if (new Date(created_at.getDate() - 1).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 1)).setHours(0, 0, 0, 0)) {
+        date_text = "1d"
+    } else if (new Date(created_at.getDate() - 2).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 2)).setHours(0, 0, 0, 0)) {
+        date_text = "2d"
+    } else if (new Date(created_at.getDate() - 3).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 3)).setHours(0, 0, 0, 0)) {
+        date_text = "3d"
+    } else if (new Date(created_at.getDate() - 4).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 4)).setHours(0, 0, 0, 0)) {
+        date_text = "4d"
+    } else if (new Date(created_at.getDate() - 5).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 5)).setHours(0, 0, 0, 0)) {
+        date_text = "5d"
+    } else {
+        var month = created_at.getUTCMonth() + 1;
+        var day = created_at.getUTCDate();
+        var year = created_at.getUTCFullYear();
+        date_text = month + "/" + day + "/" + year;
+    }
+    return date_text
+}
+$('#edit-comment-form').submit(function() {
+    var id = $("#edit-comment-form").attr("note_id")
+    var edit_note = $("#edit-comment-div").html().trim()
+    $("#edit-comment").val(edit_note)
+    if (edit_note == ""){
+      return false
+    }
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            var edited = $("#edit-comment").val()
+            var edit_p = "#msg_" + id
+            $(edit_p).html(edited)
+
+            closeForm()
+        }
+    });
+    return false;
+});
+
+function openForm(text, id) {
+    var msg_id = "#msg_"+id
+    var text = $(msg_id).html()
+    $("#edit-comment-div").html(text)
+    var form_url = "/notetest/edit/" + id + "/contact/" + {{model.id}}
+    $("#edit-comment-form").attr("action", form_url)
+    $("#edit-comment-form").attr("note_id", id)
+    document.getElementById("edit-notes").style.display = "block";
+}
+
+function closeForm() {
+    document.getElementById("edit-notes").style.display = "none";
+}
+
+function newMessage() {
+    $.ajax({
+        type: "GET",
+        url: "/notetest/create/contact/"+{{model.id}},
+        success: function(response) {
+            data = response.data
+            $("#chat-log").empty();
+            for (i = 0; i < data.length; i++) {
+                var message = data[i]['comment'];
+                var author = data[i]['author_id'];
+                var msgListTag = document.createElement('li');
+                author_name = data[i]['author_first_name'][0].toUpperCase() + data[i]['author_last_name'][0].toUpperCase()
+                var divTag = document.createElement('div');
+                var spanAuthor = document.createElement('span');
+                var spanDate = document.createElement('span');
+                var spanOuter = document.createElement('span');
+                var spanTitle = document.createElement('span');
+                // <span class="tooltiptext">Cancel Changes</span>
+                if (author == "{{request.user.id}}"){
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent1"
+                }else{
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent2"
+                }
+                spanAuthor.textContent = author_name;
+                spanTitle.className = "tooltiptext"
+                spanTitle.textContent = data[i]['author_first_name'] + " " + data[i]['author_last_name'];
+                spanAuthor.appendChild(spanTitle)
+                spanDate.className = "message_date"
+                spanDate.textContent = getDate(data[i]['created_at']);
+                divTag.className = "edit-message"
+                var pTag = document.createElement('p');
+                pTag.innerHTML = message
+                if (author == "{{request.user.id}}") {
+                    var iTag = document.createElement("i")
+                    var spanTag1 = document.createElement("span")
+                    spanTag1.className = "tooltip-parent tooltip-parent2"
+                    spanTag1.setAttribute("style", "color: grey")
+                    var titleTag = document.createElement("span")
+                    titleTag.className = "tooltiptext"
+                    iTag.className = "material-icons edit_notes_icon"
+                    iTag.textContent = "edit_note"
+                    titleTag.textContent = "Edit Note"
+                    spanTag1.setAttribute("onclick", `openForm('${data[i]['comment']}', '${data[i]['id']}')`)
+                    // iTag.setAttribute("title", "Edit Note")
+                    msgListTag.className = "replies"
+                    spanTag1.appendChild(iTag)
+                    spanTag1.appendChild(titleTag)
+                    divTag.appendChild(spanTag1)
+                    spanOuter.appendChild(spanDate)
+                    spanOuter.appendChild(spanAuthor)
+                } else {
+                    msgListTag.className = "sent"
+                    spanOuter.appendChild(spanAuthor)
+                    spanOuter.appendChild(spanDate)
+                }
+                divTag.appendChild(spanOuter)
+                msgListTag.appendChild(divTag)
+                pTag.setAttribute("id", "msg_"+data[i]['id'])
+                msgListTag.appendChild(pTag)
+                document.querySelector('#chat-log').appendChild(msgListTag);
+            }
+            $(".messages").scrollTop($(".messages")[0].scrollHeight);
+        }
+    });
+}
+
+
+</script>
+
+{% endblock javascripts %}

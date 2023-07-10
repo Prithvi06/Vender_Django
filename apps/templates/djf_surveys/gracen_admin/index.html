@@ -1,0 +1,115 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Risks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'administrator' organization_pk %}">Administration</a></li>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Library
+          <a style="text-decoration: none;" href="{% url 'djf_surveys:admin_create_survey' %}">
+            <em class="material-icons">add_circle</em>
+          </a>
+          <a style="text-decoration: none;" href="#">
+            <em class="material-icons">download_for_offline</em>
+          </a>
+        </h4>
+      </div>
+      {% if object_list %}
+      <div class="card-body">
+        <!-- popup -->
+          <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center pt-5">
+                  <h4 class="pb-5">Are you sure you want delete this Questionnaire?</h4>
+                  <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                  <a type="button" class="btn btn-primary pull-right" id="survey-delete-btn">Yes - Delete</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end -->
+        <form spellcheck="false" autocomplete="off">
+          <div class="input-group no-border justify-content-end">
+            <input name="q" type="text" class="form-control col-sm-3" placeholder="Search..."
+              value="{{ request.GET.q }}" />
+            <button class="btn btn-round btn-white btn-just-icon" type="submit">
+              <em class="material-icons">search</em>
+            </button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th></th>
+                <th scope="col">Name</th>
+                <th scope="col">Description</th>
+                <th scope="col">Active</th>
+                <th scope="col" class="hide_in_mobile_view">Created</th>
+                <th scope="col" class="hide_in_mobile_view">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for survey in page_obj %}
+              <tr>
+                <td style="width: 100px">
+                  <a  class="delete-btn tooltip-parent mr-1" href="{% url 'gracen_admin_survey_details' survey.pk %}"><i class="material-icons" style="font-size: 18px; color: grey;">pie_chart_outline</i></a>
+                  <a  class="delete-btn tooltip-parent" href="{% url 'djf_surveys:admin_edit_survey' survey.slug %}"><i class="material-icons" style="font-size: 13px; color: grey;">border_color</i><!-- <span class="tooltiptext">Delete Survey</span> --></a>
+                  <a href="#" class="tooltip-parent survey-parent"><i class="material-symbols-outlined icon_alignment" style="font-size: 19px;">info</i>
+                    {% if survey.gracen_version %}
+                    <span class="tooltiptext" style="min-width: 160px;">Gracen Version: {{survey.gracen_version}}{% endif %}</span>{% endif %}
+                  </a>
+                  <a  class="delete-btn tooltip-parent mr-1" data-toggle="modal" data-target="#deleteTask" onclick="deleteSurvey('{% url "djf_surveys:admin_delete_survey" survey.slug %}')"><i class="material-icons" style="font-size: 19px; color: grey;">delete</i><!-- <span class="tooltiptext">Delete Survey</span> --></a>
+                </td>
+                <td scope="row">
+                    {{ survey.name }}
+                </td>
+                <td>
+                  {{ survey.description }}
+                </td>
+                <td>
+                  {% if survey.active %} Active {% else %}Not Active {% endif %}
+                </td>
+                <td>
+                  {{ survey.created_at }}
+                </td>
+                <td>
+                  {{ survey.updated_at }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Libraries.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function deleteSurvey(url){
+    document.getElementById("survey-delete-btn").href = url
+  }
+</script>
+{% endblock javascripts %}

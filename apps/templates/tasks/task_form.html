@@ -1,0 +1,587 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tasks {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  pre {
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    {% if risk %}
+    <li class="breadcrumb-item"><a href="{% url 'risks' %}">Risk</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'risk-edit' risk.id %}">{{risk}}</a></li>
+    {% elif incident %}
+    <li class="breadcrumb-item"><a href="{% url 'incidents' %}">Incident</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'incident-edit' incident.id %}">{{incident}}</a></li>
+    {% elif vendor %}
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'vendor-edit' vendor.id %}">{{vendor}}</a></li>
+    {% else %}
+    <li class="breadcrumb-item"><a href="{% url 'tasks' %}">Tasks</a></li>
+    {% endif %}
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Task
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      {% if model.id %}
+      <!-- popup -->
+      <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              {% if tasks %}
+              <h4 class="">Deleting this task will remove it and all of it's child tasks.</h4>
+              <h4 class="pb-5">Do you want to proceed?</h4>
+              {% else %}
+              <h4 class="pb-5">Are you sure you want delete this Task?</h4>
+              {% endif %}
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" {% if risk %} href="{% url 'risk-task-delete' model.id risk.id %}" {% elif incident %} href="{% url 'incident-task-delete' model.id incident.id %}" {% elif vendor %} href="{% url 'vendor-task-delete' model.id vendor.id %}" {% elif parent_task_id %} href="{% url 'child-task-delete' model.id parent_task_id %}" {% else %} href="{% url 'task-delete' model.id %}" {% endif %}>Yes - Delete</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      {% endif %}
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">Edit Task
+            {% if model.id %}
+            <a  class="pull-right delete-btn tooltip-parent" data-toggle="modal" data-target="#deleteTask"><i class="material-symbols-outlined">delete</i><span class="tooltiptext">Delete Task</span></a>
+            {% endif %}
+          </h4>
+          <p class="card-category">Update the task</p>
+        </div>
+        <div class="card-body" style="position: relative;">
+
+          <!-- History log starts -->
+          <pre class="history-log" id="history_log" style="min-height: 380px; height: 510px;">
+            {{model.get_history | safe}}
+          </pre>
+          <!-- History log end -->
+
+          <!-- Notes log starts -->
+          <div class="comment-log task-comment-log" id="comment_log">
+            <form></form>
+            <div class="notes-popup" id="edit-notes" style="position: absolute;">
+              <form action="" id="edit-comment-form" class="form-container" method="post">
+                {% csrf_token %}
+                <div>
+                  <button type="submit" class="cancel-btn rounded-circle ml-2 tooltip-parent"><i class="material-icons" aria-hidden="true" style="font-size: 13px; padding-bottom: 3px;">arrow_upward</i><span class="tooltiptext">Save Edits</span></button>
+                  <button type="button" class=" cancel-btn rounded-circle tooltip-parent" onclick="closeForm()"><i class="material-icons" style="font-size: 10px;">clear</i> <span class="tooltiptext">Cancel Changes</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <textarea name="comment" id="edit-comment" style="display: none;"></textarea>
+                <div id="menu-area2" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." style="font-size: 12px;
+    height: 101px;
+    max-height: 70px;
+    overflow-y: hidden;
+    resize: vertical;
+    border: none;color: black; width: 100%;" id="edit-comment-div" class="chat-message-input-div" onkeyup="editComment()"></div>
+              </form>
+            </div>
+            <div class="messages task-messages">
+              <ul id="chat-log" style="position: relative;">
+              </ul>
+            </div>
+            <form method="post" id="chat-message-form" {% if model.id %} action="{% url 'create-task-notes' model.id %}" {% endif %}>
+              {% csrf_token %}
+              <div class="message-input">
+                <div style="">
+                  <hr class="notes-hr">
+                  <button class="submit tooltip-parent" id="chat-message-submit"><i class="material-icons" aria-hidden="true" type="submit">arrow_upward</i><span class="tooltiptext">Post Note</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <div class="wrap">
+                    <textarea style="display: none;"id="chat-message-input" name="comment"></textarea>
+            <div id="menu-area1" class="menu-area" role="listbox"></div>
+
+                    <div contenteditable="true" rows="4" placeholder="Type notes here ..." id="chat-message-input-div" class="chat-message-input-div task-chat-div" onkeyup="updateComment()"></div>
+                </div>
+              </div>
+             </form>
+          </div>
+          <!-- Notes log end -->
+
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+                <div class="form-group bmd-form-group">
+                  <label class="bmd-label-floating">{{ form.title.label }}</label>
+                  {{ form.title }}
+                  {{ form.errors.title }}
+                </div>
+                <div class="form-group bmd-form-group">
+                  <label class="bmd-label-floating">{{ form.linked_resources.label }}</label>
+                  {{ form.linked_resources }}
+                  {{ form.errors.linked_resources }}
+                  <input type="text" oninput='onInput()' id='input' list='dlist' class="form-control" value="{{resource_val}}" {% if resource_display %} disabled {% endif %}>
+                  {% if segment == "tasks" %}
+                  <datalist id='dlist'>
+                    {% for data in vendor_list %}
+                    <option value='{{data.value}}' data_id="{{data.id}}" table_name="VENDOR">Third Party</option>
+                    {% endfor %}
+                    {% for data in contact_list %}
+                    <option value='{{data.value}}' data_id="{{data.id}}" table_name="CONTACT">Contact</option>
+                    {% endfor %}
+                    {% for data in contract_list %}
+                    <option value='{{data.value}}' data_id="{{data.id}}" table_name="CONTRACT">Contract</option>
+                    {% endfor %}
+                    {% for data in risk_list %}
+                    <option value='{{data.value}}' data_id="{{data.id}}" table_name="RISK">Risk</option>
+                    {% endfor %}
+                    {% for data in incident_list %}
+                    <option value='{{data.value}}' data_id="{{data.id}}" table_name="INCIDENT">Incident</option>
+                    {% endfor %}
+                  </datalist>
+                  {% endif %}
+                </div>
+                <!-- <div class="form-group bmd-form-group is-filled">
+                  <label class="auto-label">Created Date / Time</label>
+                  <input type="text" name="created_at" class="form-control" id="created_at" value="{{created_at}}" disabled>
+                </div> -->
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="auto-label">{{ form.due_date.label }}</label>
+                  {{ form.due_date }}
+                  {{ form.errors.due_date }}
+                </div>
+                <!-- <div class="form-group bmd-form-group is-filled">
+                  <label class="auto-label">{{ form.closed_date.label }}</label>
+                  {{ form.closed_date }}
+                  {{ form.errors.closed_date }}
+                </div> -->
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="bmd-label-floating">{{ form.priority.label }}</label>
+                  {{ form.priority }}
+                  {{ form.errors.priority }}
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  <label class="bmd-label-floating">{{ form.status.label }}</label>
+                  {{ form.status }}
+                  {{ form.errors.status }}
+                </div>
+                <div class="form-group bmd-form-group is-filled">
+                  {{ form.owner }}
+                  <label class="bmd-label-floating">{{ form.owner.label }}</label>
+                  {{ form.errors.owner }}
+                  {{ form.errors.owner }}
+                </div>
+                <div style="display: flex; justify-content: center;" class="mt-4">
+                  <div class="task_status">
+                    <h5>Created</h5>
+                    <h5 style="line-height: 1.4">{{created_at}}</h5>
+                  </div>
+                  <div style="color: gray; font-weight: 400; text-align: center; width: 180px;">
+                    <span style="margin-bottom: 10px;"><span>..................................</span></span><span class="material-icons" style="vertical-align: bottom;">></span>
+                  </div>
+                  <div class="task_status">
+                    <h5>Completed</h5>
+                    <h5 style="line-height: 1.4">{{closed_date}}</h5>
+                  </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">  
+              <div class="notes_btn_height">
+                <span class="pull-right history_icon">
+                  <span class="tooltip-parent" id="history_btn" {% if model.id %} onclick="showHistory()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined pr-1">history</span>
+                    <span class="tooltiptext">History</span>
+                  </span>
+                  
+                  <span class="tooltip-parent" id="log_btn" {% if model.id %} onclick="showNotes()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined">text_snippet</span>
+                    <span class="tooltiptext">Notes</span>
+                  </span>
+                </span>
+                <div style="clear: both;"></div>
+              </div>
+              
+              <div class="form-group bmd-form-group is-filled mt-4" style="position: relative;">
+                <label class="auto-label">{{ form.description.label }}</label>
+                {{ form.description }}
+                {{ form.errors.description }}
+                <div id="menu-area" class="menu-area" role="listbox"></div>
+                <pre onkeyup="updateNotes()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 380px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-notes">{{model.get_notes | safe}}</pre>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Task
+          </button>
+          {% if risk %}
+            <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'risk-edit' risk.id %}">
+               Cancel
+            </a>
+          {% elif incident %}
+            <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'incident-edit' incident.id %}">
+               Cancel
+            </a>
+          {% elif vendor %}
+            <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'vendor-edit' vendor.id %}">
+               Cancel
+            </a>
+          {% else %}
+            <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'tasks' %}">
+               Cancel
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+
+{% if model.id and not model.parent_task and not risk and not incident and not vendor and not model.incident and not model.vendor and not model.risk %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Subtasks
+          <a style="text-decoration: none;" href="{% url 'child-task-create' model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if tasks %}
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col" class="hide_in_mobile_view">Created Date</th>
+                <th scope="col">Due Date</th>
+                <th scope="col">Status</th>
+                <th scope="col">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr>
+                <th scope="row">
+                  <a href="{% url 'child-task-edit' task.id model.id %}">
+                    {{ task }}
+                  </a>
+                </th>
+                <td class="hide_in_mobile_view">{{ task.created_at.date }}</td>
+                <td>
+                  {% if task.due_date %}
+                    <div style='display:flex'><div class='circle_div'>{{task.get_status_task | safe }}</div> <span>{{ task.due_date }}</span></div>
+                   {% endif %}
+                </td>
+                <td>{{ task.get_status_display }}</td>
+                <td>
+                  {% if task.owner %}
+                  {{ task.owner }}
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no subtasks.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+function updateComment(){
+  $("#chat-message-input").val($("#chat-message-input-div").html().trim())
+    new Mentionify(
+      document.getElementById('chat-message-input-div'),
+      document.getElementById('menu-area1'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area1",
+      "#chat-message-input-div",
+      "#chat-message-input",
+      30
+    )
+}
+function editComment(){
+  $("#edit-comment").val($("#edit-comment-div").html().trim())
+    new Mentionify(
+      document.getElementById('edit-comment-div'),
+      document.getElementById('menu-area2'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area2",
+      "#edit-comment-div",
+      "#edit-comment",
+      30
+    )
+}
+
+// var created_at = `{{created_at}}`
+// var date = new Date()
+// if (created_at != null && created_at != 'None') {
+//     var date = new Date(created_at)
+//     var tzString = Intl.DateTimeFormat().resolvedOptions().timeZone
+//     document.getElementById('created_at').defaultValue = `${date.toLocaleDateString({timeZone: tzString})}, ${date.toLocaleTimeString({timeZone: tzString, hour: 'numeric', minute: 'numeric', hour12: false})}`;
+// } else {
+//     var date = new Date()
+//     document.getElementById('created_at').defaultValue = `${date.toLocaleDateString()}, ${date.toLocaleTimeString({hour: 'numeric', minute: 'numeric'})}`;
+// }
+function updateNotes(){
+    $("#notes-text").val($("#edit-div-notes").html().trim())
+}
+new Mentionify(
+  document.getElementById('edit-div-notes'),
+  document.getElementById('menu-area'),
+  resolveFn,
+  replaceFn,
+  menuItemFn,
+  "#menu-area",
+  "#edit-div-notes",
+  "#notes-text",
+  0
+)
+
+function onInput() {
+    var val = document.getElementById("input").value;
+    var opts = document.getElementById('dlist').childNodes;
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].value === val) {
+        var data_id = opts[i].getAttribute("data_id")
+        var table = opts[i].getAttribute("table_name")
+        var val_ = opts[i].value
+        var linked_val = table + "#" + data_id + "#" + val_
+        $("#form_linked_resource").val(linked_val)
+        break;
+      }else{
+        $("#form_linked_resource").val(val)
+      }
+    }
+  }
+  function showHistory(){
+    var x = document.getElementById("history_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  function showNotes(){
+    console.log("click")
+    var x = document.getElementById("comment_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  $(document).on('click', function(e) {
+    var container = $(".history-log");
+    var showBtn = $("#history_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+    var container = $(".comment-log");
+    var showBtn = $("#log_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+});
+</script>
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#chat-message-form').submit(function() {
+        var note = $("#chat-message-input").val().trim()
+        if (note == ""){
+          return false
+        }
+        $.ajax({
+            data: $(this).serialize(),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            success: function(response) {
+                $("#chat-message-input").val("")
+                $("#chat-message-input-div").text("")
+                newMessage()
+            }
+        });
+        return false;
+    });
+    newMessage()
+});
+
+function getDate(date) {
+    var today = new Date();
+    var created_at = new Date(date);
+    var date_text = ""
+    if (created_at.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
+        date_text = "Today"
+    } else if (new Date(created_at.getDate() - 1).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 1)).setHours(0, 0, 0, 0)) {
+        date_text = "1d"
+    } else if (new Date(created_at.getDate() - 2).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 2)).setHours(0, 0, 0, 0)) {
+        date_text = "2d"
+    } else if (new Date(created_at.getDate() - 3).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 3)).setHours(0, 0, 0, 0)) {
+        date_text = "3d"
+    } else if (new Date(created_at.getDate() - 4).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 4)).setHours(0, 0, 0, 0)) {
+        date_text = "4d"
+    } else if (new Date(created_at.getDate() - 5).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 5)).setHours(0, 0, 0, 0)) {
+        date_text = "5d"
+    } else {
+        var month = created_at.getUTCMonth() + 1;
+        var day = created_at.getUTCDate();
+        var year = created_at.getUTCFullYear();
+        date_text = month + "/" + day + "/" + year;
+    }
+    return date_text
+}
+$('#edit-comment-form').submit(function() {
+    var id = $("#edit-comment-form").attr("note_id")  
+    var edit_note = $("#edit-comment-div").html().trim()
+    $("#edit-comment").val(edit_note)
+    if (edit_note == ""){
+      return false
+    }
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            var edited = $("#edit-comment").val()
+            var edit_p = "#msg_" + id
+            $(edit_p).html(edited)
+
+            closeForm()
+        }
+    });
+    return false;
+});
+
+function openForm(text, id) {
+    var msg_id = "#msg_"+id
+    var text = $(msg_id).html()
+    $("#edit-comment-div").html(text)
+    var form_url = "/notetest/edit/" + id + "/task/" + {{model.id}}
+    $("#edit-comment-form").attr("action", form_url)
+    $("#edit-comment-form").attr("note_id", id)
+    document.getElementById("edit-notes").style.display = "block";
+}
+
+function closeForm() {
+    document.getElementById("edit-notes").style.display = "none";
+}
+
+function newMessage() {
+    $.ajax({
+        type: "GET",
+        url: "/notetest/create/"+{{model.id}},
+        success: function(response) {
+            data = response.data
+            $("#chat-log").empty();
+            for (i = 0; i < data.length; i++) {
+                var message = data[i]['comment'];
+                var author = data[i]['author_id'];
+                var msgListTag = document.createElement('li');
+                author_name = data[i]['author_first_name'][0].toUpperCase() + data[i]['author_last_name'][0].toUpperCase()
+                var divTag = document.createElement('div');
+                var spanAuthor = document.createElement('span');
+                var spanDate = document.createElement('span');
+                var spanOuter = document.createElement('span');
+                var spanTitle = document.createElement('span');
+                // <span class="tooltiptext">Cancel Changes</span>
+                if (author == "{{request.user.id}}"){
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent1"
+                }else{
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent2"
+                }
+                spanAuthor.textContent = author_name;
+                spanTitle.className = "tooltiptext"
+                spanTitle.textContent = data[i]['author_first_name'] + " " + data[i]['author_last_name'];
+                spanAuthor.appendChild(spanTitle)
+                spanDate.className = "message_date"
+                spanDate.textContent = getDate(data[i]['created_at']);
+                divTag.className = "edit-message"
+                var pTag = document.createElement('p');
+                pTag.innerHTML = message
+                if (author == "{{request.user.id}}") {
+                    var iTag = document.createElement("i")
+                    var spanTag1 = document.createElement("span")
+                    spanTag1.className = "tooltip-parent tooltip-parent2"
+                    spanTag1.setAttribute("style", "color: grey")
+                    var titleTag = document.createElement("span")
+                    titleTag.className = "tooltiptext"
+                    iTag.className = "material-icons edit_notes_icon"
+                    iTag.textContent = "edit_note"
+                    titleTag.textContent = "Edit Note"
+                    spanTag1.setAttribute("onclick", `openForm('${data[i]['comment']}', '${data[i]['id']}')`)
+                    // iTag.setAttribute("title", "Edit Note")
+                    msgListTag.className = "replies"
+                    spanTag1.appendChild(iTag)
+                    spanTag1.appendChild(titleTag)
+                    divTag.appendChild(spanTag1)
+                    spanOuter.appendChild(spanDate)
+                    spanOuter.appendChild(spanAuthor)
+                } else {
+                    msgListTag.className = "sent"
+                    spanOuter.appendChild(spanAuthor)
+                    spanOuter.appendChild(spanDate)
+                }
+                divTag.appendChild(spanOuter)
+                msgListTag.appendChild(divTag)
+                pTag.setAttribute("id", "msg_"+data[i]['id'])
+                msgListTag.appendChild(pTag)
+                document.querySelector('#chat-log').appendChild(msgListTag);
+            }
+            $(".messages").scrollTop($(".messages")[0].scrollHeight);
+        }
+    });
+}
+
+</script>
+<script type="text/javascript">
+  jQuery(function($){
+    $(".chat-message-input-div").focusout(function(){
+        var element = $(this);        
+        if (!element.text().replace(" ", "").length) {
+            element.empty();
+        }
+    });
+});
+</script>
+{% endblock javascripts %}

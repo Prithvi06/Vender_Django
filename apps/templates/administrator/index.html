@@ -1,0 +1,96 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Third Parties {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style type="text/css">
+  .icon_style{
+    font-size: 48px;
+    color: grey;
+  }
+  .link_style{
+    font-weight: 500 !important;
+    color: #707070;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">Administration</li>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          General Settings
+        </h4>
+        <p class="card-category">Configure the basic settings for your account</p>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 col-sm-3 pl-4">
+            <a href="{% url 'field-values' organization.id %}">
+            <i class="material-symbols-outlined icon_alignment icon_style">fact_check</i>
+            <span class="link_style">Field Values</span>
+            </a>
+          </div>
+          <div class="col-12 col-sm-3 mt-3 mt-sm-0 pl-4">
+            <a href="{% url 'organization_setup' organization.id %}">
+                <i class="material-symbols-outlined icon_alignment icon_style"
+                    style="font-size: 48px;">account_tree</i>
+                <span class="link_style">Organization Setup</span>
+          </div>
+          <div class="col-12 col-sm-3 mt-sm-0 mt-3 pl-4">
+            <a href="{% url 'djf_surveys:admin_survey' %}">
+            <i class="material-symbols-outlined icon_alignment icon_style">dynamic_form</i>
+            <span class="link_style">Questionnaires</span>
+            </a>
+          </div>
+          <div class="col-12 col-sm-3 mt-sm-0 mt-3 pl-4">
+            <a href="{% url 'locations' organization.id %}">
+            <i class="material-symbols-outlined icon_style" style="font-size: 48px;vertical-align: middle;">edit_location</i>
+              <span class="link_style">Locations</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          User Settings
+        </h4>
+        <p class="card-category">Manage your organization's users</p>
+      </div>
+      <div class="card-body">
+          <div class="row">
+            <div class="col-12 pl-4">
+              <a href="{% url 'org_user_list' organization.id %}">
+                <i class="material-symbols-outlined icon_alignment icon_style">manage_accounts</i>
+                <span class="link_style">Users</span>
+              </a>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

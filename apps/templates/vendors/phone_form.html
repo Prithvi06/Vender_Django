@@ -1,0 +1,93 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Phone Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'vendor-edit' model.vendor_id %}?section=CONTACTS">{{ model.vendor_name }}</a></li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'contact-edit' model.vendor_id model.contact_id %}">
+        {{ model.contact_name }}
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Phone Number
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      {% if model.id %}
+      <!-- popup -->
+      <div class="modal fade" id="deletePhone" tabindex="-1" role="dialog" aria-labelledby="deletePhoneTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              <h4 class="pb-5">Are you sure you want delete this <b>{{model}}?</b></h4>
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" href="{% url 'phone-delete' model.vendor_id model.contact_id model.id %}">Yes - Delete</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      {% endif %}
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">
+            Edit Phone Number
+            {% if model.id %} 
+            <a  class="pull-right delete-btn" data-toggle="modal" data-target="#deletePhone"><i class="material-symbols-outlined">delete</i></a>
+            {% endif %}
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="form-group bmd-form-group">
+            {{ form.number }}
+            <label class="bmd-label-floating">{{ form.number.label }}</label>
+            {{ form.errors.number }}
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            {{ form.type }}
+            <label class="bmd-label-floating">{{ form.type.label }}</label>
+            {{ form.errors.type }}
+          </div>
+          <div class="form-group bmd-form-group is-filled">
+            {{ form.is_preferred }}
+            <label class="bmd-label-floating">{{ form.is_preferred.label }}</label>
+            {{ form.errors.is_preferred }}
+          </div>
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Phone Number
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'contact-edit' model.vendor_id model.contact_id %}">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

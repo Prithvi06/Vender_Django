@@ -1,0 +1,331 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Contract Edit {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+ 
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'vendor-edit' model.vendor_id %}?section=CONTRACTS">{{ model.vendor_name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {% if not model.id %}
+      New Contract
+      {% else %}
+      {{ model }}
+      {% endif %}
+    </li>
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+{% if form.errors %}
+<div class="alert alert-danger col-12" role="alert">
+  Changes Not Saved - Correct the indicated errors and try again.
+</div>
+{% endif %}
+<form method="post" spellcheck="false" autocomplete="off">
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-12">
+      {% if model.id %}
+      <!-- popup -->
+      <div class="modal fade" id="deleteContract" tabindex="-1" role="dialog" aria-labelledby="deleteContractTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center pt-5">
+              <h4 class="pb-5">Are you sure you want delete this <b>{{model}}?</b></h4>
+              <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+              <a type="button" class="btn btn-primary pull-right" href="{% url 'contract-delete' model.vendor_id model.id %}">Yes - Delete</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end -->
+      {% endif %}
+      <div class="card">
+        <div class="card-header card-header-primary">
+          <h4 class="card-title">
+            Edit Contract
+            {% if model.id %} 
+            <a  class="pull-right delete-btn tooltip-parent" data-toggle="modal" data-target="#deleteContract"><i class="material-symbols-outlined">delete</i><span class="tooltiptext">Delete Contract</span></a>
+            {% endif %}
+          </h4>
+          <p class="card-category">Update the contract information</p>
+        </div>
+        <div class="card-body">
+           <!-- History log starts -->
+          <pre class="history-log" id="history_log" style="min-height: 380px; height: 577px;">
+            {{model.get_history | safe}}
+          </pre>
+          <!-- History log end -->
+          <div class="row">
+            <div class="col-md-6 col-12 form_div">
+              <div class="form-group bmd-form-group">
+                {{ form.title }}
+                <label class="bmd-label-floating">{{ form.title.label }}</label>
+                {{ form.errors.title }}
+              </div>
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group is-filled">
+                    {{ form.effective_date }}
+                    <label>{{ form.effective_date.label }}</label>
+                    {{ form.errors.effective_date }}
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group is-filled">
+                    {{ form.next_expiration }}
+                    <label>{{ form.next_expiration.label }}</label>
+                    {{ form.errors.next_expiration }}
+                  </div>
+                </div>
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.status.label }}</label>
+                {{ form.status }}
+              </div>
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group">
+                    {{ form.renewal_period_days }}
+                    <label class="bmd-label-floating">{{ form.renewal_period_days.label }}</label>
+                    {{ form.errors.renewal_period_days }}
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="form-group bmd-form-group is-filled">
+                    {{ form.renewal_pad }}
+                    <label class="bmd-label-floating">{{ form.renewal_pad.label }}</label>
+                    {{ form.errors.renewal_pad}}
+                  </div>
+                </div>
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.is_auto_renew.label }}</label>
+                {{ form.is_auto_renew }}
+              </div>
+              <div class="form-group bmd-form-group is-filled">
+                <label class="bmd-label-floating">{{ form.has_minimum_fees.label }}</label>
+                {{ form.has_minimum_fees }}
+              </div>
+              <div class="form-group bmd-form-group">
+                <label class="bmd-label-floating">{{ form.contract_optional_id.label }}</label>
+                {{ form.contract_optional_id }}
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="notes_btn_height">
+                <span class="pull-right history_icon">
+                  <span class="tooltip-parent" id="history_btn" {% if model.id %} onclick="showHistory()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                    <span class="material-symbols-outlined pr-1">history</span>
+                    <span class="tooltiptext">History</span>
+                  </span>
+                </span>
+              </div>
+              <div class="form-group bmd-form-group is-filled mt-3">
+                {{ form.terms }}
+                <div id="menu-area" class="menu-area" role="listbox"></div>
+                <div onkeyup="updateNotes()" contenteditable="true" class="form-control resize-textarea text-div" style="height: 350px; overflow-y: scroll; width: 100%; overflow-x: none;" id="edit-div-notes">
+                  {{model.get_terms | safe}}
+                </div>
+                <label class="auto-label">{{ form.terms.label }}</label>
+                {{ form.errors.terms }}
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary pull-right">
+            {% if model.id %} Update {% else %} Create {% endif %} Contract
+          </button>
+          <a type="button" class="btn btn-dark pull-right mr-3" href="{% url 'vendor-edit' model.vendor_id %}?section=CONTRACTS">
+             Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if model.id %}
+<div id="contract-links-display"></div>
+{% if document_permission %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Documents
+          {% if edit_doc_permission %}
+          <a style="text-decoration: none;" href="{% url 'document-create' model.vendor_id model.id %}">
+            <i class="material-icons">add_circle</i>
+          </a>
+          {% endif %}
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if documents %}
+        <!-- popup document delete -->
+        <div class="modal fade" id="deleteDocument" tabindex="-1" role="dialog" aria-labelledby="deleteDocumentTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-5">
+                <h4 class="pb-5">Are you sure you want delete this Document <b>?</b></h4>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                <a type="button" class="btn btn-primary pull-right" href="" id="document-delete-btn">Yes - Delete</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+
+        <!-- popup document view file -->
+        <div class="modal fade" id="viewDocument" tabindex="-1" role="dialog" aria-labelledby="viewDocumentTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-body text-center pt-5">
+                <h4 class="pb-5" style="font-size: 17px;">The document you are trying to retrieve could not be found. If you believe you are receiving this message in error, please report it to your admin.<b></b></h4>
+                <button type="button" class="btn btn-primary pull-right" data-dismiss="modal">Ok</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end -->
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col">File Name</th>
+                <th scope="col" class="hide_in_mobile_view">Created Date</th>
+                <th scope="col" class="hide_in_mobile_view">Updated Date</th>
+                <th scope="col"></th>
+                <th scope="col" class="hide_in_mobile_view"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+              <tr>
+                <td scope="row">
+                  <a {% if edit_doc_permission %}href="{% url 'document-edit' model.vendor_id model.id document.id %}"{% else %}href="#"{% endif %}>
+                    {{ document.description }}
+                  </a>
+                </td>
+                <td>
+                    {{ document }}
+                </td>
+                <td class="hide_in_mobile_view">{{ document.created_date }}</td>
+                <td class="hide_in_mobile_view">{% if document.updated_at %}{{ document.updated_date }}{% endif %}</td>
+                <td>
+                  {% if document.file_exists %}
+                    <a href="{% url 'document-view' model.vendor_id model.id document.id %}" target="_blank">
+                      View
+                    </a>
+                    {% else %}
+                    <a href="#" data-toggle="modal" data-target="#viewDocument">
+                      View
+                    </a>
+                  {% endif %}
+                </td>
+                {% if edit_doc_permission %}
+                <td class="hide_in_mobile_view">
+                  <a class="redirect_btn tooltip-parent tooltip-parent1" data-toggle="modal" data-target="#deleteDocument" 
+                  onclick="deleteDocument('{% url "document-delete" model.vendor_id document.contract.id document.id %}')">
+                    <i class="material-symbols-outlined icon_alignment">delete</i><span class="tooltiptext">Delete Document</span>
+                  </a>
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>There are no documents.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function addLink(selected, selected_type) {
+    $("#add-link-modal").removeClass("fade");
+    $("#add-link-modal").modal("hide");
+    if (selected == "None" | selected == null | selected == "") {
+      return;
+    }
+    $.post(
+      `links/${selected}/${selected_type}`,
+      function (data, state, xhtml) {
+        $("#contract-links-display").html(data);
+      }
+    )
+  };
+
+  function removeLink(selected, relation_type) {
+    if (selected == "None" | selected == null | selected == "") {
+      return;
+    }
+    $.ajax({
+      url: `links/${selected}/${relation_type}`,
+      type: "DELETE",
+      success: function (data, state, xhtml) {
+        $("#contract-links-display").html(data);
+      }
+    })
+  };
+
+  $(document).ready(function () {
+    console.log("{{ model.id }}")
+    if ("{{ model.id }}" != "None") {
+      $.get(
+        "links/",
+        function (data, state, xhtml) {
+          $("#contract-links-display").html(data);
+        }
+      )
+    }
+  });
+  function deleteDocument(url){
+    document.getElementById("document-delete-btn").href = url
+  }
+  function updateNotes(){
+    $("#notes-text").val($("#edit-div-notes").html())
+  }
+  new Mentionify(
+      document.getElementById('edit-div-notes'),
+      document.getElementById('menu-area'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area",
+      "#edit-div-notes",
+      "#notes-text",
+      0
+    )
+  function showHistory(){
+    var x = document.getElementById("history_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+  $(document).on('click', function(e) {
+    var container = $(".history-log");
+    var showBtn = $("#history_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+});
+</script>
+{% endblock javascripts %}

@@ -1,0 +1,781 @@
+{% extends "layouts/base.html" %}
+{% load render_table from django_tables2 %}
+{% load djf_survey_tags %}
+
+
+{% block title %} Questionnaire {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+  .dropzone {
+    display: flex;
+    height: 100px;
+    border: 2px dashed #ccc;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+  }
+
+  .dropzone div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropzone.dragover {
+    border-color: #F26622;
+    color: white;
+    border-width: 5px;
+    background-color: #f2672258;
+    font-weight: bold;
+  }
+  .fa-arrow-down{
+  transform: rotate(0deg);
+  transition: transform 1s linear;
+}
+
+.fa-arrow-down.open{
+  transform: rotate(180deg);
+  transition: transform 1s linear;
+}
+pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+
+/*@media screen and (min-width: 992px) and (max-width:1100px){
+  .status_info{
+    margin-right: 20px !important;
+  }
+}
+@media screen and (min-width: 750px)and (max-width: 835px){
+  .status_info{
+    margin-right: 30px !important;
+  }
+}
+@media screen and (max-width: 755px){
+  .status_info{
+    margin-right: 0px !important;
+  }
+}*/
+
+</style>
+{% endblock stylesheets %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" role="navigation">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'vendors' %}">Third Parties
+</a></li>
+{% if edit_survey %}
+  <li class="breadcrumb-item"><a href="{% url 'vendor-edit' edit_survey.vendor.pk %}?section=QUESTIONS">{{edit_survey.vendor}}
+  </a></li>
+    <li class="breadcrumb-item active">
+      <a href="{% url 'vendor-edit' edit_survey.vendor.pk %}?section=QUESTIONS">Questionnaires
+  </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {{edit_survey}}
+    </li>
+  {% else %}
+  <li class="breadcrumb-item"><a href="{% url 'vendor-edit' object.vendor.pk %}?section=QUESTIONS">{{object.vendor}}
+  </a></li>
+    <li class="breadcrumb-item active">
+      <a href="{% url 'vendor-edit' object.vendor.pk %}?section=QUESTIONS">Questionnaires
+  </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {{object}}
+    </li>
+  {% endif %}
+  </ol>
+</nav>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header card-header-primary">
+        <h4 class="card-title">
+          Complete Questionnaire
+        </h4>
+      </div>
+      {% if survey_question %}
+      <div class="card-body">
+         <!-- Send questionnarie popup -->
+          <form method="post" {% if edit_survey %} action="{% url 'vendor-survey-link' edit_survey.vendor.pk edit_survey.pk %}" {% else %} action="{% url 'vendor-survey-link' object.vendor.pk object.pk %}" {% endif %} spellcheck="false"  autocomplete="off" class="send_questionnaire_form"> 
+            {% csrf_token %}
+          <div class="modal fade mymodal in"
+               id="sendQuestionnare"
+               tabindex="-1"
+               role="dialog"
+               aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content card" style="width: 600px;">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title">Send Questionnaire</h4>
+                </div>
+                <div class="card-body mt-4" >
+                  
+                  <!-- <hr style="margin-top: 0.5rem; margin-bottom: 1.5rem;"> -->
+                  {% if survey_question.survey.status >= 3 %}
+                      <div class="row" style="color: #999999 !important;font-size: 20px;text-align: center;">
+                        The current recipient has already accessed this questionnaire, are you sure you want to send it to another user?
+                      </div>
+                    {% endif %}
+                  <div class="row mt-5">
+                    <div class="col-sm-6 ">
+                      <div class="text-gray" style="font-size:20px;">Choose a Recipeint</div>
+                        <div class="dropdown">
+                         <input type="hidden" name="user_id" value="" id="user_id">
+                          <select class="form-control" name="linked_resource_" id="linked_user_select">
+                            {% for user in users %}
+                              <option value="{{user.first_name|title}}{{user.last_name|title}}" data_type="USER">{{user.id}},{{user.first_name|title}} {{user.last_name|title}},{{user.get_role_display|title}}
+                              </option>
+                            {% endfor %}
+                          </select>
+                      </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-gray" style="font-size:20px;">Choose Due Date (optional)</div>
+                        <div class="input-group date">
+                          <input type="date" data-date-format="dd-mm-yyyy" placeholder="" data-date-viewmode="years" class="form-control" name="invite_due_date">
+                        </div>
+                      </div>
+                  </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between">
+                  <button type="button" class="btn btn-dark" data-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">
+                    {% if survey_question.survey.status >= 3 %}Yes - Send {% else %}
+                  Send {% endif %}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </form>
+
+          <!-- End send questionnarie popup -->
+        <form method="post" spellcheck="false"  autocomplete="off" class="header_form"  id="header_form" style="display: none;">
+        {% csrf_token %}
+        <input type="text" name="header" id="header_input">
+      </form>
+        <!-- History log starts -->
+        <pre class="history-log" id="history_log" style="min-height: 380px; height: 465px;">
+          {{history | safe}}
+        </pre>
+        <!-- History log end -->
+
+        <!-- Notes log starts -->
+        <div class="comment-log risk-comment-log" id="comment_log">
+            <form></form>
+            <div class="notes-popup" id="edit-notes" style="position: absolute;">
+              <form action="" id="edit-comment-form" class="form-container" method="post">
+                {% csrf_token %}
+                <div>
+                  <button type="submit" class="notes_submit cancel-btn rounded-circle ml-2 tooltip-parent"><i class="material-icons" aria-hidden="true" style="font-size: 13px; padding-bottom: 3px;">arrow_upward</i><span class="tooltiptext">Save Edits</span></button>
+                  <button type="button" class="notes_cancel cancel-btn rounded-circle tooltip-parent" onclick="closeForm()"><i class="material-icons" style="font-size: 10px;">clear</i> <span class="tooltiptext">Cancel Changes</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <textarea name="comment" id="edit-comment" style="display: none;"></textarea>
+                <div id="menu-area2" class="menu-area" role="listbox"></div>
+                <div contenteditable="true" rows="4" placeholder="Type notes here ..." style="font-size: 12px;height: 101px;max-height: 70px;overflow-y: hidden;resize: vertical;border: none;color: black; width: 100%;" id="edit-comment-div" class="chat-message-input-div" onkeyup="editComment()">
+                </div>
+              </form>
+            </div>
+            <div class="messages risk-messages">
+              <ul id="chat-log" style="position: relative;">
+              </ul>
+            </div>
+
+            <input type="text" name="" id="survey_id" value="{% if edit_survey %}{{edit_survey.id}}{% else %}{{object.id}}{% endif %}" hidden>
+
+            <form method="post" id="chat-message-form" {% if edit_survey %} action="{% url 'create-survey-notes' edit_survey.id %}" {% else %}action="{% url 'create-survey-notes' object.id %}" {% endif %}>
+              {% csrf_token %}
+              <div class="message-input">
+                <div style="">
+                  <hr class="notes-hr">
+                  <button class="submit tooltip-parent notes_submit" id="chat-message-submit"><i class="material-icons" aria-hidden="true" type="submit">arrow_upward</i><span class="tooltiptext tooltipsurvey">Post Note</span></button>
+                  <div style="clear:both;"></div>
+                </div>
+                <div class="wrap">
+                    <textarea style="display: none;"id="chat-message-input" name="comment"></textarea>
+                  <div id="menu-area1" class="menu-area" role="listbox"></div>
+                  <div contenteditable="true" rows="4" placeholder="Type notes here ..." id="chat-message-input-div" class="chat-message-input-div task-chat-div" onkeyup="updateComment()"></div>
+                </div>
+              </div>
+            </form>
+        </div>
+          <!-- Notes log end -->
+
+        <form method="post" id="questionnarie_form" spellcheck="false"  autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="notes_btn_height" style="display: flex; flex-direction: row-reverse; flex-wrap: wrap;">
+          <input type="hidden" name="vendor_info" id="vendor_info" value="">
+          <div style="display:flex;flex-direction: row-reverse;flex-wrap: wrap;">
+            <div class="dropdown-menu"  
+               aria-labelledby="dropdownMenuButton">
+               {% for user in users %}
+               
+                <a class="dropdown-item vendor_name" style="cursor: pointer;" {% if edit_survey %} href="{% url 'vendor-survey-link' edit_survey.vendor.pk edit_survey.pk %}?user={{user.pk}}" {% else %} href="{% url 'vendor-survey-link' object.vendor.pk object.pk %}?user={{user.pk}}" {% endif %}>
+                {% if user.first_name %}{{user.first_name}} {{user.last_name}} {% else %} {{user.email}} {% endif %}</a>
+                {% endfor %}
+            </div>
+
+             <button type="button" class="btn {% if survey_question.survey.status <= 2 %} btn-primary {% endif %} mr-0" data-toggle="modal" data-target="#sendQuestionnare" style="{% if survey_question.survey.status >= 3 %} background-color: gray; {% endif %}">
+              Send Questionnaire
+            </button>
+            <button class="btn btn-dark  mr-3" type="submit" style="background-color: gray;">Save</button>
+             <a  class="btn btn-dark  mx-3" href="{% url 'vendor-edit' object.vendor.pk %}?section=QUESTIONS">Cancel</a>
+             <span class="tooltip-parent" id="log_btn" onclick="showNotes()" style="cursor:pointer;">
+                <span class="material-symbols-outlined" style="font-size:30px;padding-top:8px">text_snippet</span>
+                <span class="tooltiptext" style="left: -50px;bottom: 60px;">Notes</span>
+              </span>
+            <span class=" history_icon" style="margin-left: 110px;">
+              <span class="tooltip-parent" id="history_btn" {% if show_history %} onclick="showHistory()" {% else %} style="cursor: not-allowed;" {% endif %}>
+                <span class="material-icons m-2" style="font-size: 30px;">history</span>
+                 <span class="tooltiptext" style="left: -40px; bottom: 60px;">History</span>
+              </span>
+            </span>
+
+            <span class="status_info" style="padding-top: 10px;">STATUS : {{survey_question.survey.get_status_display|upper}} {% if survey_question.survey.invite_due_date %} <span class="ml-3">DUE DATE : {{survey_question.survey.invite_due_date}}</span> {% endif %}</span>
+          </div>
+        </div>
+
+        <div style="clear: both;"></div>
+        <!-- popup -->
+          <div class="modal fade" id="deleteTask" tabindex="-1" role="dialog" aria-labelledby="deleteTask" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center pt-5">
+                  <h4 class="pb-5">Are you sure you want delete this Question?</h4>
+                  <button type="button" class="btn btn-default pull-left" data-dismiss="modal">No</button>
+                  <a type="button" class="btn btn-primary pull-right" id="survey-delete-btn">Yes - Delete</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- end -->
+
+          <div class="d-flex" style="margin-top:50px">
+            
+            <div  id="sortable" class="question_top_div">
+
+            {% for field in form %}
+            {% if not field.field.widget.attrs.question_type == 'na_explain' %}
+            <div class="main_header_div">
+                {% if field.field.widget.attrs.header %}
+                <div id="header_main_{{field|get_id_field}}" style="display: flex;">
+                  <div class="form-group bmd-form-group header_form" draggable="false" id="header_{{field|get_id_field}}">
+                    <input type="text" class="text-dark header_input" name="header" id="header-input-{{field|get_id_field}}" value="{{field.field.widget.attrs.header|default_if_none:''|title}}" readonly=True style="background: none; z-index: 1; position: relative; border: none;">
+                  </div>
+                </div>
+                {% else %}
+                <div id="header_main_{{field|get_id_field}}" style="display: flex;">
+                  <div class="form-group bmd-form-group header_form" draggable="false" id="header_{{field|get_id_field}}">
+                  </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="question_tile {% if field.field.widget.attrs.header_question_count < 2  and field.field.widget.attrs.header != None  %} unsortable {% endif %}" id="{{ field|get_id_field }}" >
+              <div class="dice_div">
+                <h6 class="text-center question_number tooltip-parent tooltip-parent2 question_number_tip" style="display: block !important;"><span>{{field.field.widget.attrs.question_count}}</span><span class="tooltiptext">{{field.field.widget.attrs.question_id}} - [{{field.field.widget.attrs.question_key}}]</span></h6>
+                <div class="sixth-face dice" style="{% if field.field.widget.attrs.header_question_count < 2  and field.field.widget.attrs.header != None  %} cursor: not-allowed; {% else %} cursor: pointer; {% endif %}">
+                  <i class="material-icons drag_indicators">drag_indicator</i>
+                </div>
+              </div>
+              <div class="question_tile_div">
+              <a  class="delete-btn tooltip-parent" href="{% url 'djf_surveys:edit_question' field|get_id_field %}"><i class="material-icons" style="font-size: 17px; color: grey;">border_color</i></a>
+              <a  class="delete-btn tooltip-parent mr-1" data-toggle="modal" data-target="#deleteTask" onclick="deleteSurvey('{% url "djf_surveys:delete_question" field|get_id_field %}')"><i class="material-icons" style="font-size: 23px; color: grey;">delete</i><!-- <span class="tooltiptext">Delete Survey</span> --></a>
+              {% if field.field.widget.attrs.user and field.value %}
+              <a href="#" class="delete-btn tooltip-parent tooltip-parent5 pull-right"><i class="material-icons" style="font-size: 24px; color: grey;">face_5</i><span class="tooltiptext">Completed by {{organization.name}} user {{field.field.widget.attrs.user}}</span></a>
+              {% endif %}
+              <h5>{{field.label}}</h5>
+              <div class="mt-1">
+                  {% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'checkbox' %}
+                  <div class="form-group" style="padding-bottom:0px;">
+                      {{ field }}
+                      {% if field.field.widget.attrs.question_type == 'Yes-No-NA' %}
+                        <div class="form-group bmd-form-group is-filled mt-4 pb-1">
+                            <div style="display: flex; justify-content: space-between;">
+                              <label class="auto-label" style="font-size:14px!important">If N/A, explain</label>
+                              <span class="help-block"><span class="label_count">{{field.field.widget.attrs.na_explain_value|length}}</span> / 500</span>
+                            </div>
+                          <textarea name="na_explain_{{field.field.widget.attrs.question_id}}" class="text-div" onkeyup="charCount(this)" style="height: 60px;  width: 100%;">{{field.field.widget.attrs.na_explain_value}}</textarea>
+                        </div>
+                      {% endif %}
+                  </div>
+                  {% elif field.field.widget.input_type == 'hidden' %}
+                  <div class="rating">
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="1" {% if field.value == "1" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="2" {% if field.value == "2" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="3" {% if field.value == "3" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="4" {% if field.value == "4" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                    <label style="margin-bottom:0px">
+                      <input type="radio" name="{{field.name}}" value="5" {% if field.value == "5" %} checked {% endif %} {% if field.field.required %}required{% endif %} />
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                      <span class="icon">★</span>
+                    </label>
+                  </div>
+                  {% elif field.field.widget.attrs.indicator == 'date' %}
+                  <div class="form-group bmd-form-group">
+                    <input type="date" name="{{field.name}}" class="form-control" id="{{field.auto_id}}" {% if field.field.required %} required {% endif %} value="{{field.value}}">
+                  </div>
+                  {% elif field.field.widget.input_type == 'file' %}
+                  <div style="height:230px">
+                    <input type="file" id="id_path{{field.name}}" name="{{field.name}}"  {% if not field.initial.name %} {% if field.field.required %}required{% endif %} {% endif %} onchange="selectDocument('{{field.name}}')" style="padding: 2px 0px 0px 0px;height: 0px;">
+                    <div class="dropzone question_dropzone" id="dropzone{{field.name}}" ondrop="drop(event, '{{field.name}}')" ondragover="dragOverElement(event, '{{field.name}}')" ondragleave="dragLeaveElement(event, '{{field.name}}')">
+                      <div>
+                        <div>Drag & Drop File Here</div>
+                        <div id="id_current_file{{field.name}}">{% if field.value %}Current File: <a href="{% url 'djf_surveys:question_document_view' field.field.widget.attrs.question_id %}" target="_blank"> {{ field|document_value }}</a>{% endif %}</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-primary pull-left" onclick="ChangeFile('{{field.name}}')">
+                      Browse To Upload File
+                    </button>
+                  </div>
+                  {% else %}
+                  <div class="form-group">
+                    {% if field.field.widget.input_type == 'text' %}
+                      {{ field|addclass:'form-control' }}
+                      <span class="help-block" style="float:right;"><span class="label_count">{{field.value|length}}</span> / 500</span>
+                    {% else %}
+                      {{ field|addclass:'form-control' }}
+                    {% endif %}
+                    
+                  </div>
+                  {% endif %}
+              </div>
+              <div class="help_text" style="height: 40px">{{field.help_text}}</div>
+            </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            </div>
+          </div>
+      </form>
+      </div>
+      {% else %}
+      <p class="pl-3">There are no Questionnaires.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script>
+
+  $("#sortable").sortable({
+    cancel: ".header_form, .unsortable, :input, textarea, select, option"
+  });
+
+  function removeRequired(id, required=false) {
+      let hascheck = 0
+      let count = 0
+      let el = document.getElementsByClassName(id);
+      for (var i = 0; i < el.length; i++) {
+        if (el[i].hasAttribute("checked")){
+          hascheck = hascheck + 1
+        }
+        if (el[i].checked){
+          count = count + 1
+        }
+          el[i].removeAttribute("required")
+        }
+      if (required && (count == 0 || hascheck == 1)){
+        for (var i = 0; i < el.length; i++) {
+          el[i].required = true
+          if (el[i].hasAttribute("checked")){
+            el[i].removeAttribute("checked")
+          }
+        }
+      }
+    }
+
+  function charCount(e){
+    label_len = e.value.length
+    if (label_len >= 500) {
+      e.value = e.value.substring(0, 500)
+    }
+    e.parentElement.getElementsByClassName("label_count")[0].innerText = e.value.length
+  }
+  
+  function deleteSurvey(url){
+    document.getElementById("survey-delete-btn").href = url
+  }
+  function showHistory(){
+    var x = document.getElementById("history_log");
+    if (x.style.display === "none" | x.style.display === "") {
+      x.style.display = "block";
+    } else {
+      x.style.display = "none";
+    }
+  }
+
+  function showNotes(){
+      var x = document.getElementById("comment_log");
+      if (x.style.display === "none" | x.style.display === "") {
+        x.style.display = "block";
+      } else {
+        x.style.display = "none";
+      }
+    }
+
+  $(document).on('click', function(e) {
+    var container = $(".history-log");
+    var showBtn = $("#history_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+    var container = $(".comment-log");
+    var showBtn = $("#log_btn");
+    if (!$(e.target).closest(container).length && !$(e.target).closest(showBtn).length) {
+        container.hide();
+    }
+  })
+
+  $(function () {
+            $("#sortable").sortable({
+                opacity: 0.7,
+                update: function (event, ui) {
+                    const order = $(this).sortable('toArray');
+                    var on_header = false
+                    if (order.length > order.indexOf(ui.item[0].id)){
+                      if (order[ui.item[0].id+1] != ""){
+                          on_header = true
+                      }
+                    }
+                    $.ajax({
+                        url: "{% url 'djf_surveys:change_order_question' %}",
+                        type: 'POST',
+                        headers: {"X-CSRFToken": '{{csrf_token}}'},
+                        data: {
+                            'order_question': order.toString(),
+                            "order_question_id": ui.item[0].id,
+                            "on_header": on_header
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            $(".question_number").get().forEach(function(entry, index, array) {
+                                entry.textContent = index + 1
+                            });
+                            window.location.reload()
+                        },
+                        error: function (data) {
+                            alert("An error occured!");
+                        }
+                    });
+                }
+            });
+        });
+  </script>
+  <script type="text/javascript">
+
+    new Mentionify(
+      document.getElementById('chat-message-input-div'),
+      document.getElementById('menu-area1'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area1",
+      "#chat-message-input-div",
+      "#chat-message-input",
+      30
+    )
+
+  function updateComment(){
+    $("#chat-message-input").val($("#chat-message-input-div").html().trim())
+      new Mentionify(
+        document.getElementById('chat-message-input-div'),
+        document.getElementById('menu-area1'),
+        resolveFn,
+        replaceFn,
+        menuItemFn,
+        "#menu-area1",
+        "#chat-message-input-div",
+        "#chat-message-input",
+        30
+      )
+  }
+function editComment(){
+  $("#edit-comment").val($("#edit-comment-div").html().trim())
+    new Mentionify(
+      document.getElementById('edit-comment-div'),
+      document.getElementById('menu-area2'),
+      resolveFn,
+      replaceFn,
+      menuItemFn,
+      "#menu-area2",
+      "#edit-comment-div",
+      "#edit-comment",
+      30
+      )
+  }
+
+$(document).ready(function() {
+    $('#chat-message-form').submit(function() {
+        var note = $("#chat-message-input").val().trim()
+        if (note == ""){
+          return false
+        }
+        $.ajax({
+            data: $(this).serialize(),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            success: function(response) {
+                $("#chat-message-input").val("")
+                $("#chat-message-input-div").text("")
+                newMessage()
+            }
+        });
+        return false;
+    });
+    newMessage()
+});
+
+function getDate(date) {
+    var today = new Date();
+    var created_at = new Date(date);
+    var date_text = ""
+    if (created_at.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
+        date_text = "Today"
+    } else if (new Date(created_at.getDate() - 1).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 1)).setHours(0, 0, 0, 0)) {
+        date_text = "1d"
+    } else if (new Date(created_at.getDate() - 2).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 2)).setHours(0, 0, 0, 0)) {
+        date_text = "2d"
+    } else if (new Date(created_at.getDate() - 3).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 3)).setHours(0, 0, 0, 0)) {
+        date_text = "3d"
+    } else if (new Date(created_at.getDate() - 4).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 4)).setHours(0, 0, 0, 0)) {
+        date_text = "4d"
+    } else if (new Date(created_at.getDate() - 5).setHours(0, 0, 0, 0) == (new Date(today.getDate() - 5)).setHours(0, 0, 0, 0)) {
+        date_text = "5d"
+    } else {
+        var month = created_at.getUTCMonth() + 1;
+        var day = created_at.getUTCDate();
+        var year = created_at.getUTCFullYear();
+        date_text = month + "/" + day + "/" + year;
+    }
+    return date_text
+}
+$('#edit-comment-form').submit(function() {
+    var id = $("#edit-comment-form").attr("note_id")  
+    var edit_note = $("#edit-comment-div").html().trim()
+    $("#edit-comment").val(edit_note)
+    if (edit_note == ""){
+      return false
+    }
+    $.ajax({
+        data: $(this).serialize(),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
+        success: function(response) {
+            var edited = $("#edit-comment").val()
+            var edit_p = "#msg_" + id
+            $(edit_p).html(edited)
+
+            closeForm()
+        }
+    });
+    return false;
+});
+
+function openForm(text, id) {
+    var msg_id = "#msg_"+id
+    var text = $(msg_id).html()
+    $("#edit-comment-div").html(text)
+    var survey_id = $("#survey_id").val()
+    var form_url = "/notetest/edit/" + id + "/survey/" +  survey_id
+    $("#edit-comment-form").attr("action", form_url)
+    $("#edit-comment-form").attr("note_id", id)
+    document.getElementById("edit-notes").style.display = "block";
+}
+
+function closeForm() {
+    document.getElementById("edit-notes").style.display = "none";
+}
+
+function newMessage() {
+    let survey_id = $("#survey_id").val()
+    $.ajax({
+        type: "GET",
+        url: "/notetest/create/survey/"+survey_id,
+        success: function(response) {
+            data = response.data
+            $("#chat-log").empty();
+            for (i = 0; i < data.length; i++) {
+                var message = data[i]['comment'];
+                var author = data[i]['author_id'];
+                var msgListTag = document.createElement('li');
+                author_name = data[i]['author_first_name'][0].toUpperCase() + data[i]['author_last_name'][0].toUpperCase()
+                var divTag = document.createElement('div');
+                var spanAuthor = document.createElement('span');
+                var spanDate = document.createElement('span');
+                var spanOuter = document.createElement('span');
+                var spanTitle = document.createElement('span');
+                // <span class="tooltiptext">Cancel Changes</span>
+                if (author == "{{request.user.id}}"){
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent1"
+                }else{
+                  spanAuthor.className = "user_name tooltip-parent tooltip-parent2"
+                }
+                spanAuthor.textContent = author_name;
+                spanTitle.className = "tooltiptext"
+                spanTitle.textContent = data[i]['author_first_name'] + " " + data[i]['author_last_name'];
+                spanAuthor.appendChild(spanTitle)
+                spanDate.className = "message_date"
+                spanDate.textContent = getDate(data[i]['created_at']);
+                divTag.className = "edit-message"
+                var pTag = document.createElement('p');
+                pTag.innerHTML = message
+                if (author == "{{request.user.id}}") {
+                    var iTag = document.createElement("i")
+                    var spanTag1 = document.createElement("span")
+                    spanTag1.className = "tooltip-parent tooltip-parent2"
+                    spanTag1.setAttribute("style", "color: grey")
+                    var titleTag = document.createElement("span")
+                    titleTag.className = "tooltiptext"
+                    iTag.className = "material-icons edit_notes_icon"
+                    iTag.textContent = "edit_note"
+                    titleTag.textContent = "Edit Note"
+                    spanTag1.setAttribute("onclick", `openForm('${data[i]['comment']}', '${data[i]['id']}')`)
+                    // iTag.setAttribute("title", "Edit Note")
+                    msgListTag.className = "replies"
+                    spanTag1.appendChild(iTag)
+                    spanTag1.appendChild(titleTag)
+                    divTag.appendChild(spanTag1)
+                    spanOuter.appendChild(spanDate)
+                    spanOuter.appendChild(spanAuthor)
+                } else {
+                    msgListTag.className = "sent"
+                    spanOuter.appendChild(spanAuthor)
+                    spanOuter.appendChild(spanDate)
+                }
+                divTag.appendChild(spanOuter)
+                msgListTag.appendChild(divTag)
+                pTag.setAttribute("id", "msg_"+data[i]['id'])
+                msgListTag.appendChild(pTag)
+                document.querySelector('#chat-log').appendChild(msgListTag);
+            }
+            $(".messages").scrollTop($(".messages")[0].scrollHeight);
+        }
+    });
+}
+
+</script>
+  <script>  
+  function drop(e, value){
+    var fileinput = document.getElementById('id_path'+value);
+    var filename = $("#id_current_file"+value);
+    fileinput.files = e.dataTransfer.files;
+    filename.text("Current File: " + e.dataTransfer.files[0].name);
+    e.preventDefault();
+    document.getElementById("dropzone"+value).className = 'dropzone';
+  }
+  function dragOverElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone dragover';
+    event.preventDefault()
+  }
+  function dragLeaveElement(event, value){
+    document.getElementById("dropzone"+value).className = 'dropzone';
+    event.preventDefault()
+  }
+  function ChangeFile(name){
+    document.getElementById("id_path"+name).click();
+  }
+  function selectDocument(name) {
+    var filename = $("#id_current_file"+name);
+    filename.text("Current File: " + $("#id_path"+name)[0].files[0].name);
+  };
+</script>
+<script>
+  
+  $(document).ready(function() {
+
+    var select = $('#linked_user_select');
+    var options = select.find('option');
+
+    var div = $('<div />').addClass('selectMultiple');
+    var active = $('<div style="min-height:0"/>');
+    active.append($(`<input value="" id="linked_user" style="border:none; color: #495057" required>`))
+    var list = $('<ul id="search_ul" />').addClass("owner_list");
+    options.each(function() {
+      
+        var text = $(this).text();
+        let textid = text.split(",")[0]
+        let text1 = text.split(",")[1]
+        let text2 = text.split(",")[2]
+        list_el = ($(`<li data_type="${$(this).attr("data_type")}" />`));
+        list_el.append($(`<span class="multiple-text" id="${textid}"/>`).text(text1))
+        list_el.append($(`<p class="multiple-heading" />`).text(text2))
+
+        list.append(list_el);
+        
+    });
+
+    active.append($('<div />').addClass('arrow'));
+    div.append(active).append(list);
+
+    select.wrap(div);
+
+    $(document).on('click', '.selectMultiple ul li', function(e) {
+        var select = $(this).parent().parent();
+        var li = $(this);
+        addUser(li.children("span").text(), li.children("span").attr("id"))
+    });
+
+    $(document).on('click', '.selectMultiple > div', function(e) {
+        $(this).parent().toggleClass('open');
+    });
+
+    $(document).on('click', function(e) {
+      var container1 = $(".selectMultiple > div");
+      var search = $("#search_ul");
+      if (!$(e.target).closest(container1).length && !$(e.target).closest(search).length) {
+        container1.parent().removeClass('open');
+      }
+    });
+
+});
+
+  function addUser(val, user_id){
+    var risk_type = $("#linked_user").val().trim()
+    val = val.trim()
+      $("#linked_user").val("")
+      $("#linked_user").val(val)
+      $("#user_id").val(user_id)
+      var container1 = $(".selectMultiple > div");
+      container1.parent().removeClass('open');
+  }
+
+</script>
+{% endblock javascripts %}

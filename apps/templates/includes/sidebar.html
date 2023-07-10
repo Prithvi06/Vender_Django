@@ -1,0 +1,85 @@
+{% load org_tags %}
+
+<div class="sidebar" data-color="purple" data-background-color="white" data-image="/static/assets/img/sidebar-1.jpg">
+    <div class="logo">
+        <div class="simple-text logo-normal">
+            <img src="/static/assets/img/logo.png" alttext="GRaCen" style="width: 50%">
+        </div>
+    </div>
+    <div class="sidebar-wrapper">
+        <ul class="nav">
+          <div style="overflow-y:auto; height: 70vh;">
+            {% if request.user.is_authenticated %}
+            <li class="nav-item {% if 'dashboard' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'dashboard' %}">
+                    <i class="material-icons">dashboard</i>
+                    <p>Dashboard</p>
+                </a>
+            </li>
+
+            <li class="nav-item {% if 'vendors' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'vendors' %}">
+                    <i class="material-icons">store</i>
+                    <p>Third Parties</p>
+                </a>
+                {% if request.user.feature_permission %}
+                <ul style="list-style-type: none;" class="child_nav">
+                    <li class="nav-item {% if 'contracts' in segment %} side_active {% endif %}">
+                        <a class="nav-link" href="{% url 'contract_index' %}">
+                            <p>Contracts</p>
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </li>
+            <li class="nav-item {% if 'risks' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'risks' %}">
+                    <i class="material-icons">gpp_maybe</i>
+                    <p>Risks</p>
+                </a>
+            </li>
+            <li class="nav-item {% if 'incidents' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'incidents' %}">
+                    <i class="material-icons">warning</i>
+                    <p>Incidents</p>
+                </a>
+            </li>
+            <li class="nav-item {% if 'tasks' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'tasks' %}">
+                    <i class="material-icons">task</i>
+                    <p>Tasks</p>
+                </a>
+            </li>
+
+            <hr style="width:90%; margin-top:15px; margin-bottom:15px;" />
+
+            <li class="nav-item {% if 'equipments' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'equipments' %}">
+                    <i class="material-icons">devices</i>
+                    <p>Equipment</p>
+                </a>
+            </li>
+            <li class="nav-item {% if 'systems' in segment %} side_active {% endif %}">
+                <a class="nav-link" href="{% url 'systems' %}">
+                    <i class="material-icons">app_registration</i>
+                    <p>Systems</p>
+                </a>
+            </li>
+
+            {% endif %}
+          </div>
+            {% if organization|is_admin:user or organization|is_owner:user %}
+            <div style="position: absolute; bottom: 10px; width: 100%">
+                <hr style="width: 90%; margin-top:15px; margin-bottom: 15px;" />
+                <li class="nav-item {% if 'administrator' in segment %} side_active {% endif %}">
+                    <a class="nav-link" href="{% url 'administrator' organization.id %}">
+                        <i class="material-icons">settings</i>
+                        <p>Admin</p>
+                    </a>
+                </li>
+            </div>
+            {% endif %}
+        </ul>
+    </div>
+
+</div>

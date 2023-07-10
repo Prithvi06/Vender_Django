@@ -1,0 +1,41 @@
+{% extends "layouts/base.html" %}
+
+{% load i18n %}
+{% load account socialaccount %}
+{% load static %}
+
+{% block title %} Sign Out {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block navigation %}{% endblock %}
+
+{% block content %}
+
+<div class="row align-items-center" style="height: calc(100vh - 220px);">
+  <div class="offset-md-3 col-md-5 my-auto registration-modal">
+    <div class="card">
+      <div class="card-body text-center">
+
+        <br />
+
+        <p>{% trans "Are you sure you want to sign out?" %}</p>
+
+        <form method="post" action="{% url 'account_logout' %}">
+          {% csrf_token %}
+          {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">{% trans 'Sign Out' %}</button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
